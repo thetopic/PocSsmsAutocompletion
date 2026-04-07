@@ -58,6 +58,8 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
     <Reference Include="SqlPackageBase">
       <HintPath>C:\Program Files\Microsoft SQL Server Management Studio 22\Release\Common7\IDE\SqlPackageBase.dll</HintPath>
     </Reference>

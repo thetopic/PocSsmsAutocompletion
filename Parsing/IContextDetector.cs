@@ -12,6 +12,6 @@ namespace SsmsAutocompletion {
         string GetCurrentWord(ITextSnapshot snapshot, int caretPosition);
         ITrackingSpan GetWordSpan(ITextSnapshot snapshot, int caretPosition);
         string GetWordBefore(ITextSnapshot snapshot, int caretPosition);
-        (bool isAliasContext, string tableNameBefore) DetectAliasContext(ParseResult parseResult, string sql, int line, int column);
+        (bool isAliasContext, string tableNameBefore) DetectAliasContext(ParseResult parseResult, string sql, int line, int column, int caretPosition);
     }
 }

@@ -2,10 +2,15 @@ using Microsoft.SqlServer.Management.SqlParser.Parser;
 using Microsoft.VisualStudio.Text;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace SsmsAutocompletion {
 
     internal sealed class SqlContextDetector : IContextDetector {
+
+        private static readonly Regex AliasContextRegex = new Regex(
+            @"(?:FROM|JOIN)\s+((?:\[?\w+\]?\.)?(?:\[?\w+\]?))\s+$",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         private static readonly HashSet<string> SqlKeywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
             "SELECT","FROM","WHERE","JOIN","INNER","LEFT","RIGHT","OUTER","CROSS","FULL",
@@ -90,12 +95,12 @@ namespace SsmsAutocompletion {
         }
 
         public (bool isAliasContext, string tableNameBefore) DetectAliasContext(
-            ParseResult parseResult, string sql, int line, int column) {
+            ParseResult parseResult, string sql, int line, int column, int caretPosition) {
             try {
                 var tokenManager = parseResult?.Script?.TokenManager;
-                if (tokenManager == null) return (false, null);
+                if (tokenManager == null) return RegexDetectAliasContext(sql, caretPosition);
                 int cursorToken = tokenManager.FindToken(line, column);
-                if (cursorToken < 0) return (false, null);
+                if (cursorToken < 0) return RegexDetectAliasContext(sql, caretPosition);
                 int prev1Index = tokenManager.GetPreviousSignificantTokenIndex(cursorToken);
                 if (prev1Index < 0) return (false, null);
                 string prev1Text = tokenManager.GetText(prev1Index)?.Trim() ?? "";
@@ -109,6 +114,16 @@ namespace SsmsAutocompletion {
                 return DetectAliasContextAfterAs(tokenManager, prev1Text, prev2Index);
             }
             catch { return (false, null); }
+        }
+
+        private static (bool, string) RegexDetectAliasContext(string sql, int caretPosition) {
+            if (string.IsNullOrEmpty(sql)) return (false, null);
+            string textUpToCaret = sql.Substring(0, Math.Min(caretPosition, sql.Length));
+            var match = AliasContextRegex.Match(textUpToCaret);
+            if (!match.Success) return (false, null);
+            string tableName = match.Groups[1].Value.Trim('[', ']');
+            if (string.IsNullOrEmpty(tableName) || SqlKeywords.Contains(tableName)) return (false, null);
+            return (true, tableName);
         }
 
         private static (bool, string) DetectAliasContextAfterAs(

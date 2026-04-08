@@ -58,7 +58,9 @@ namespace SsmsAutocompletion {
                 case VSConstants.VSStd2KCmdID.RETURN:
                 case VSConstants.VSStd2KCmdID.TAB:
                     if (!_popup.IsVisible) return VSConstants.E_FAIL;
-                    _popup.Commit();
+                    var committed = _popup.Commit();
+                    if (committed?.Description == "Table")
+                        TriggerCompletionFromExplicitCommand();
                     return VSConstants.S_OK;
                 case VSConstants.VSStd2KCmdID.CANCEL:
                     if (!_popup.IsVisible) return VSConstants.E_FAIL;

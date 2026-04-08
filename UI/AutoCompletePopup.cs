@@ -58,9 +58,9 @@ namespace SsmsAutocompletion {
                 _listBox.SelectedIndex--;
         }
 
-        public void Commit() {
+        public CompletionItem Commit() {
             var selectedText = _listBox.SelectedItem as string;
-            if (selectedText == null) { Dismiss(); return; }
+            if (selectedText == null) { Dismiss(); return null; }
             var selectedItem = _allItems.FirstOrDefault(item => item.DisplayText == selectedText);
             string insertText = selectedItem?.InsertText ?? selectedText;
             Dismiss();
@@ -70,6 +70,7 @@ namespace SsmsAutocompletion {
                 _textView.TextBuffer.Replace(span, insertText);
             }
             catch { }
+            return selectedItem;
         }
 
         public void Dismiss() {

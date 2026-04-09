@@ -61,7 +61,7 @@ namespace SsmsAutocompletion {
                 foreach (var columnB in columnsB) {
                     if (!AreSimilar(columnA.ColumnName, columnB.ColumnName)) continue;
                     string condition = $"{aliasA}.{columnA.ColumnName} = {aliasB}.{columnB.ColumnName}";
-                    items.Add(new CompletionItem(condition, condition, "Colonnes similaires"));
+                    items.Add(new CompletionItem(condition, condition, "Colonnes similaires", CompletionItemKind.Join));
                 }
             }
         }

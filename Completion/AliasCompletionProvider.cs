@@ -23,7 +23,8 @@ namespace SsmsAutocompletion {
             var item = new CompletionItem(
                 suggestedAlias,
                 suggestedAlias + " ",
-                $"Alias suggéré pour {request.TableNameBeforeCursor}");
+                $"Alias suggéré pour {request.TableNameBeforeCursor}",
+                CompletionItemKind.Alias);
             return new[] { item };
         }
     }

@@ -21,7 +21,7 @@ namespace SsmsAutocompletion {
             var columns = _databaseMetadata.GetColumns(request.ConnectionKey, tableInfo.Schema, tableInfo.TableName);
             var items   = new List<CompletionItem>(columns.Count);
             foreach (var column in columns)
-                items.Add(new CompletionItem(column.ColumnName, column.ColumnName, column.DataType));
+                items.Add(new CompletionItem(column.ColumnName, column.ColumnName, column.DataType, CompletionItemKind.Column));
             return items.AsReadOnly();
         }
 

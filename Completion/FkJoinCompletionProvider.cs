@@ -54,14 +54,14 @@ namespace SsmsAutocompletion {
                                  && string.Equals(foreignKey.ReferencedSchema, tableB.Schema,   StringComparison.OrdinalIgnoreCase);
                 if (aReferencesB) {
                     string condition = BuildCondition(aliasA, foreignKey.FkColumns, aliasB, foreignKey.ReferencedColumns);
-                    items.Add(new CompletionItem(condition, condition, "Relation FK/PK"));
+                    items.Add(new CompletionItem(condition, condition, "Relation FK/PK", CompletionItemKind.Join));
                     continue;
                 }
                 bool bReferencesA = string.Equals(foreignKey.FkTable, tableB.TableName, StringComparison.OrdinalIgnoreCase)
                                  && string.Equals(foreignKey.FkSchema, tableB.Schema,   StringComparison.OrdinalIgnoreCase);
                 if (bReferencesA) {
                     string condition = BuildCondition(aliasB, foreignKey.FkColumns, aliasA, foreignKey.ReferencedColumns);
-                    items.Add(new CompletionItem(condition, condition, "Relation FK/PK"));
+                    items.Add(new CompletionItem(condition, condition, "Relation FK/PK", CompletionItemKind.Join));
                 }
             }
         }

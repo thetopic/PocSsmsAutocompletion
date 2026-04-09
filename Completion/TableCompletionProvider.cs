@@ -17,7 +17,7 @@ namespace SsmsAutocompletion {
             var tables = _databaseMetadata.GetTables(request.ConnectionKey);
             var items  = new List<CompletionItem>(tables.Count);
             foreach (var table in tables)
-                items.Add(new CompletionItem(table.ToString(), table.ToString() + " ", "Table"));
+                items.Add(new CompletionItem(table.ToString(), table.ToString() + " ", "Table", CompletionItemKind.Table));
             return items.AsReadOnly();
         }
     }

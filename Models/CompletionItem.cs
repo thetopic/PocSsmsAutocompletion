@@ -1,14 +1,24 @@
 namespace SsmsAutocompletion {
 
-    internal sealed class CompletionItem {
-        public string DisplayText { get; }
-        public string InsertText  { get; }
-        public string Description { get; }
+    internal enum CompletionItemKind {
+        Keyword,
+        Table,
+        Column,
+        Join,
+        Alias
+    }
 
-        public CompletionItem(string displayText, string insertText, string description) {
+    internal sealed class CompletionItem {
+        public string            DisplayText { get; }
+        public string            InsertText  { get; }
+        public string            Description { get; }
+        public CompletionItemKind Kind       { get; }
+
+        public CompletionItem(string displayText, string insertText, string description, CompletionItemKind kind = CompletionItemKind.Keyword) {
             DisplayText = displayText;
             InsertText  = insertText;
             Description = description;
+            Kind        = kind;
         }
     }
 }

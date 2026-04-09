@@ -32,6 +32,9 @@ namespace SsmsAutocompletion {
         private static readonly ICteExtractor CteExtractor =
             new CteExtractor();
 
+        private static readonly ICteColumnExtractor CteColumnExtractor =
+            new CteColumnExtractor();
+
         private static readonly ISqlParser SqlParser =
             new SsmsSqlParser();
 
@@ -78,6 +81,7 @@ namespace SsmsAutocompletion {
                 new AliasCompletionProvider(AliasExtractor, SqlParser),
                 new ColumnCompletionProvider(DatabaseMetadata, AliasExtractor),
                 new CteCompletionProvider(CteExtractor),
+                new CteColumnCompletionProvider(CteExtractor, CteColumnExtractor, AliasExtractor),
                 new TableCompletionProvider(DatabaseMetadata),
                 new KeywordCompletionProvider(),
             }.AsReadOnly();

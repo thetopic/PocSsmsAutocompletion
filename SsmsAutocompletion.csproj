@@ -98,36 +98,44 @@
     <Reference Include="WindowsBase" />
     <Reference Include="SqlPackageBase">
       <HintPath>C:\Program Files\Microsoft SQL Server Management Studio 22\Release\Common7\IDE\SqlPackageBase.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="SqlWorkbench.Interfaces">
       <HintPath>C:\Program Files\Microsoft SQL Server Management Studio 22\Release\Common7\IDE\SqlWorkbench.Interfaces.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.SqlServer.Management.SmoMetadataProvider">
-      <Version>181.15.0</Version>
+    <PackageReference Include="Microsoft.SqlServer.Management.SmoMetadataProvider" Version="181.15.0">
+      <IncludeAssets>compile; analyzers</IncludeAssets>
+      <ExcludeAssets>runtime; build; native; contentfiles; buildtransitive</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.SqlServer.Management.SqlParser">
-      <Version>173.8.0</Version>
+    <PackageReference Include="Microsoft.SqlServer.Management.SqlParser" Version="173.8.0">
+      <IncludeAssets>compile; analyzers</IncludeAssets>
+      <ExcludeAssets>runtime; build; native; contentfiles; buildtransitive</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects">
-      <Version>181.15.0</Version>
+    <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects" Version="181.15.0">
+      <IncludeAssets>compile; analyzers</IncludeAssets>
+      <ExcludeAssets>runtime; build; native; contentfiles; buildtransitive</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom">
-      <Version>170.191.0</Version>
+    <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" Version="170.191.0">
+      <IncludeAssets>compile; analyzers</IncludeAssets>
+      <ExcludeAssets>runtime; build; native; contentfiles; buildtransitive</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.SqlServer.Types">
-      <Version>170.1000.7</Version>
+    <PackageReference Include="Microsoft.SqlServer.Types" Version="170.1000.7">
+      <IncludeAssets>compile; analyzers</IncludeAssets>
+      <ExcludeAssets>runtime; build; native; contentfiles; buildtransitive</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Editor">
-      <Version>17.14.249</Version>
+    <PackageReference Include="Microsoft.VisualStudio.Editor" Version="17.14.249" ExcludeAssets="runtime" NoWarn="NU1604">
+      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" NoWarn="NU1604">
       <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration">
-      <Version>17.12.19</Version>
+    <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration" Version="17.12.19" ExcludeAssets="runtime" NoWarn="NU1604">
+      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.14.2120" NoWarn="NU1604" />
   </ItemGroup>

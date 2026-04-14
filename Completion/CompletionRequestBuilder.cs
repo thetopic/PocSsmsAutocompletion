@@ -24,7 +24,7 @@ namespace SsmsAutocompletion {
             bool isDotContext  = _contextDetector.IsDotContext(snapshot, caretPosition);
             string qualifier   = isDotContext ? _contextDetector.GetQualifier(snapshot, caretPosition) : null;
             bool isJoinOnContext    = _contextDetector.IsAfterKeyword(parseResult, line, column, "ON");
-            bool isAfterJoinKeyword = _contextDetector.IsAfterJoinKeyword(sql, caretPosition);
+            bool isAfterJoinKeyword = _contextDetector.IsAfterKeyword(parseResult, line, column, "JOIN");
             bool isWhereContext     = _contextDetector.IsInsideWhereClause(parseResult, line, column);
             var (isAfterTable, tableNameBefore) = _contextDetector.DetectAliasContext(parseResult, sql, line, column, caretPosition);
             return new CompletionRequest(

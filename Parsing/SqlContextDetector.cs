@@ -12,11 +12,6 @@ namespace SsmsAutocompletion {
             @"(?:FROM|JOIN)\s+((?:\[?\w+\]?\.)?(?:\[?\w+\]?))\s+$",
             RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        // Matches text that ends with JOIN followed by an optional partial table name.
-        // Handles INNER/LEFT/RIGHT/FULL/CROSS JOIN variants.
-        private static readonly Regex AfterJoinRegex = new Regex(
-            @"\bJOIN\s+\w*$",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         private static readonly HashSet<string> SqlKeywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
             "SELECT","FROM","WHERE","JOIN","INNER","LEFT","RIGHT","OUTER","CROSS","FULL",
@@ -44,12 +39,6 @@ namespace SsmsAutocompletion {
                 qualifierStart--;
             if (qualifierStart >= qualifierEnd) return null;
             return snapshot.GetText(qualifierStart, qualifierEnd - qualifierStart);
-        }
-
-        public bool IsAfterJoinKeyword(string sql, int caretPosition) {
-            if (string.IsNullOrEmpty(sql)) return false;
-            string textUpToCaret = sql.Substring(0, Math.Min(caretPosition, sql.Length));
-            return AfterJoinRegex.IsMatch(textUpToCaret);
         }
 
         public bool IsAfterKeyword(ParseResult parseResult, int line, int column, string keyword) {

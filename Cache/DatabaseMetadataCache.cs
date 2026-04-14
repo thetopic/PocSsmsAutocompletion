@@ -1,10 +1,10 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.SmoMetadataProvider;
 using Microsoft.SqlServer.Management.SqlParser.MetadataProvider;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Threading.Tasks;
 
 namespace SsmsAutocompletion {
@@ -151,13 +151,15 @@ namespace SsmsAutocompletion {
         }
 
         private static void LoadForeignKeys(SqlConnection conn, Dictionary<string, List<ForeignKeyInfo>> foreignKeyMap) {
+            // fk.name is first so columns are read in strict sequential order (0,1,2,3,4,5,6)
+            // as required by CommandBehavior.SequentialAccess.
             const string sql = @"
                 SELECT
+                    fk.name,
                     ss.name, st.name,
                     COL_NAME(fkc.parent_object_id,     fkc.parent_column_id)     AS FkCol,
                     rs.name, rt.name,
-                    COL_NAME(fkc.referenced_object_id, fkc.referenced_column_id) AS RefCol,
-                    fk.name
+                    COL_NAME(fkc.referenced_object_id, fkc.referenced_column_id) AS RefCol
                 FROM sys.foreign_keys fk
                 INNER JOIN sys.tables  st  ON fk.parent_object_id     = st.object_id
                 INNER JOIN sys.schemas ss  ON st.schema_id            = ss.schema_id
@@ -171,14 +173,20 @@ namespace SsmsAutocompletion {
             using (var cmd = new SqlCommand(sql, conn) { CommandTimeout = 60 })
             using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess)) {
                 while (reader.Read()) {
-                    string fkName = reader.GetString(6);
+                    // Read all columns in strict order 0→6 as required by SequentialAccess
+                    string fkName      = reader.GetString(0); // fk.name
+                    string ownerSchema = reader.GetString(1); // ss.name
+                    string ownerTable  = reader.GetString(2); // st.name
+                    string fkCol       = reader.GetString(3); // FkCol
+                    string refSchema   = reader.GetString(4); // rs.name
+                    string refTable    = reader.GetString(5); // rt.name
+                    string refCol      = reader.GetString(6); // RefCol
                     if (!fkData.TryGetValue(fkName, out var acc)) {
-                        acc = new FkAccumulator(reader.GetString(0), reader.GetString(1),
-                                                reader.GetString(3), reader.GetString(4));
+                        acc            = new FkAccumulator(ownerSchema, ownerTable, refSchema, refTable);
                         fkData[fkName] = acc;
                     }
-                    acc.FkCols.Add(reader.GetString(2));
-                    acc.RefCols.Add(reader.GetString(5));
+                    acc.FkCols.Add(fkCol);
+                    acc.RefCols.Add(refCol);
                 }
             }
 

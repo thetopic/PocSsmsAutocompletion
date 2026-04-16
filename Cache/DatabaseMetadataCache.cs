@@ -1,10 +1,9 @@
-using Microsoft.Data.SqlClient;
 using Microsoft.SqlServer.Management.Common;
+using Microsoft.SqlServer.Management.Smo;
 using Microsoft.SqlServer.Management.SmoMetadataProvider;
 using Microsoft.SqlServer.Management.SqlParser.MetadataProvider;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Threading.Tasks;
 
 namespace SsmsAutocompletion {
@@ -73,130 +72,73 @@ namespace SsmsAutocompletion {
                 if (Entries.TryGetValue(connectionKey.ToString(), out var existing) && !existing.IsExpired)
                     return;
             }
-            var newEntry = LoadFromSql(serverConnection);
+            var newEntry = LoadFromObjectExplorer(serverConnection);
             lock (Lock) {
                 if (!Entries.TryGetValue(connectionKey.ToString(), out var existing2) || existing2.IsExpired)
                     Entries[connectionKey.ToString()] = newEntry;
             }
         }
 
-        // Replaces the SMO N+1 approach (1 query per table) with 3 bulk SQL queries
-        // against system catalog views, reducing 30min → a few seconds on large databases.
-        private static CacheEntry LoadFromSql(ServerConnection serverConnection) {
+        // Navigates the SMO object tree (the same path as the SSMS Object Explorer) without
+        // any hand-written SQL.  PrefetchObjects issues one SMO bulk query per type so that
+        // iterating tables/columns/FKs afterwards hits no additional round-trips.
+        private static CacheEntry LoadFromObjectExplorer(ServerConnection serverConnection) {
             var tables        = new List<TableInfo>();
             var columnMap     = new Dictionary<string, List<ColumnInfo>>(StringComparer.OrdinalIgnoreCase);
             var foreignKeyMap = new Dictionary<string, List<ForeignKeyInfo>>(StringComparer.OrdinalIgnoreCase);
             IMetadataProvider metadataProvider = null;
             try {
                 metadataProvider = SmoMetadataProvider.CreateConnectedProvider(serverConnection);
-                using (var conn = BuildSqlConnection(serverConnection)) {
-                    conn.Open();
-                    LoadTables(conn, tables);
-                    LoadColumns(conn, columnMap);
-                    LoadForeignKeys(conn, foreignKeyMap);
+
+                var server = new Server(serverConnection);
+
+                // Restrict which properties SMO fetches per type so bulk queries stay lean.
+                server.SetDefaultInitFields(typeof(Table),
+                    nameof(Table.Schema), nameof(Table.Name), nameof(Table.IsSystemObject));
+                server.SetDefaultInitFields(typeof(Column), true); // 'true' = all fields; needed so DataType.Name resolves without a second round-trip
+                server.SetDefaultInitFields(typeof(ForeignKey),
+                    nameof(ForeignKey.Name),
+                    nameof(ForeignKey.ReferencedTable),
+                    nameof(ForeignKey.ReferencedTableSchema));
+                server.SetDefaultInitFields(typeof(ForeignKeyColumn),
+                    nameof(ForeignKeyColumn.Name),
+                    nameof(ForeignKeyColumn.ReferencedColumn));
+
+                var db = server.Databases[serverConnection.DatabaseName];
+                if (db == null) return BuildCacheEntry(metadataProvider, tables, columnMap, foreignKeyMap);
+
+                // Bulk-load each type in a single SMO round-trip (best-effort per type).
+                try { db.PrefetchObjects(typeof(Table));           } catch { }
+                try { db.PrefetchObjects(typeof(Column));          } catch { }
+                try { db.PrefetchObjects(typeof(ForeignKey));      } catch { }
+                try { db.PrefetchObjects(typeof(ForeignKeyColumn)); } catch { }
+
+                foreach (Table table in db.Tables) {
+                    if (table.IsSystemObject) continue;
+                    tables.Add(new TableInfo(table.Schema, table.Name));
+
+                    var colList = new List<ColumnInfo>();
+                    foreach (Column col in table.Columns)
+                        colList.Add(new ColumnInfo(col.Name, col.DataType.Name));
+                    columnMap[MakeTableKey(table.Schema, table.Name)] = colList;
+
+                    foreach (ForeignKey fk in table.ForeignKeys) {
+                        var fkCols  = new List<string>();
+                        var refCols = new List<string>();
+                        foreach (ForeignKeyColumn fkc in fk.Columns) {
+                            fkCols.Add(fkc.Name);
+                            refCols.Add(fkc.ReferencedColumn);
+                        }
+                        var fkInfo = new ForeignKeyInfo(
+                            table.Schema, table.Name, fkCols.AsReadOnly(),
+                            fk.ReferencedTableSchema, fk.ReferencedTable, refCols.AsReadOnly());
+                        AddToListMap(foreignKeyMap, MakeTableKey(table.Schema,        table.Name),        fkInfo);
+                        AddToListMap(foreignKeyMap, MakeTableKey(fk.ReferencedTableSchema, fk.ReferencedTable), fkInfo);
+                    }
                 }
             }
             catch { }
             return BuildCacheEntry(metadataProvider, tables, columnMap, foreignKeyMap);
-        }
-
-        private static SqlConnection BuildSqlConnection(ServerConnection sc) {
-            var builder = new SqlConnectionStringBuilder {
-                DataSource         = sc.ServerInstance,
-                InitialCatalog     = sc.DatabaseName,
-                IntegratedSecurity = sc.LoginSecure,
-                ConnectTimeout     = 30,
-            };
-            if (!sc.LoginSecure) {
-                builder.UserID   = sc.Login;
-                builder.Password = sc.Password;
-            }
-            return new SqlConnection(builder.ConnectionString);
-        }
-
-        private static void LoadTables(SqlConnection conn, List<TableInfo> tables) {
-            const string sql = @"
-                SELECT s.name, t.name
-                FROM sys.tables t
-                INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
-                WHERE t.is_ms_shipped = 0
-                ORDER BY s.name, t.name";
-            using (var cmd = new SqlCommand(sql, conn) { CommandTimeout = 60 })
-            using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess)) {
-                while (reader.Read())
-                    tables.Add(new TableInfo(reader.GetString(0), reader.GetString(1)));
-            }
-        }
-
-        private static void LoadColumns(SqlConnection conn, Dictionary<string, List<ColumnInfo>> columnMap) {
-            const string sql = @"
-                SELECT s.name, t.name, c.name, tp.name
-                FROM sys.columns c
-                INNER JOIN sys.tables  t  ON c.object_id    = t.object_id
-                INNER JOIN sys.schemas s  ON t.schema_id    = s.schema_id
-                INNER JOIN sys.types   tp ON c.user_type_id = tp.user_type_id
-                WHERE t.is_ms_shipped = 0
-                ORDER BY s.name, t.name, c.column_id";
-            using (var cmd = new SqlCommand(sql, conn) { CommandTimeout = 60 })
-            using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess)) {
-                while (reader.Read()) {
-                    string key = MakeTableKey(reader.GetString(0), reader.GetString(1));
-                    if (!columnMap.TryGetValue(key, out var list)) {
-                        list           = new List<ColumnInfo>();
-                        columnMap[key] = list;
-                    }
-                    list.Add(new ColumnInfo(reader.GetString(2), reader.GetString(3)));
-                }
-            }
-        }
-
-        private static void LoadForeignKeys(SqlConnection conn, Dictionary<string, List<ForeignKeyInfo>> foreignKeyMap) {
-            // fk.name is first so columns are read in strict sequential order (0,1,2,3,4,5,6)
-            // as required by CommandBehavior.SequentialAccess.
-            const string sql = @"
-                SELECT
-                    fk.name,
-                    ss.name, st.name,
-                    COL_NAME(fkc.parent_object_id,     fkc.parent_column_id)     AS FkCol,
-                    rs.name, rt.name,
-                    COL_NAME(fkc.referenced_object_id, fkc.referenced_column_id) AS RefCol
-                FROM sys.foreign_keys fk
-                INNER JOIN sys.tables  st  ON fk.parent_object_id     = st.object_id
-                INNER JOIN sys.schemas ss  ON st.schema_id            = ss.schema_id
-                INNER JOIN sys.tables  rt  ON fk.referenced_object_id = rt.object_id
-                INNER JOIN sys.schemas rs  ON rt.schema_id            = rs.schema_id
-                INNER JOIN sys.foreign_key_columns fkc ON fk.object_id = fkc.constraint_object_id
-                ORDER BY fk.name, fkc.constraint_column_id";
-
-            // Aggregate multi-column FKs before building ForeignKeyInfo objects
-            var fkData = new Dictionary<string, FkAccumulator>(StringComparer.OrdinalIgnoreCase);
-            using (var cmd = new SqlCommand(sql, conn) { CommandTimeout = 60 })
-            using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess)) {
-                while (reader.Read()) {
-                    // Read all columns in strict order 0→6 as required by SequentialAccess
-                    string fkName      = reader.GetString(0); // fk.name
-                    string ownerSchema = reader.GetString(1); // ss.name
-                    string ownerTable  = reader.GetString(2); // st.name
-                    string fkCol       = reader.GetString(3); // FkCol
-                    string refSchema   = reader.GetString(4); // rs.name
-                    string refTable    = reader.GetString(5); // rt.name
-                    string refCol      = reader.GetString(6); // RefCol
-                    if (!fkData.TryGetValue(fkName, out var acc)) {
-                        acc            = new FkAccumulator(ownerSchema, ownerTable, refSchema, refTable);
-                        fkData[fkName] = acc;
-                    }
-                    acc.FkCols.Add(fkCol);
-                    acc.RefCols.Add(refCol);
-                }
-            }
-
-            foreach (var acc in fkData.Values) {
-                var fkInfo    = new ForeignKeyInfo(
-                    acc.OwnerSchema, acc.OwnerTable, acc.FkCols.AsReadOnly(),
-                    acc.RefSchema,   acc.RefTable,   acc.RefCols.AsReadOnly());
-                AddToListMap(foreignKeyMap, MakeTableKey(acc.OwnerSchema, acc.OwnerTable), fkInfo);
-                AddToListMap(foreignKeyMap, MakeTableKey(acc.RefSchema,   acc.RefTable),   fkInfo);
-            }
         }
 
         private static void AddToListMap<T>(Dictionary<string, List<T>> map, string key, T value) {
@@ -220,16 +162,6 @@ namespace SsmsAutocompletion {
 
         private static string MakeTableKey(string schema, string tableName) =>
             $"{schema ?? "dbo"}.{tableName}";
-
-        private sealed class FkAccumulator {
-            public readonly string OwnerSchema, OwnerTable, RefSchema, RefTable;
-            public readonly List<string> FkCols  = new List<string>();
-            public readonly List<string> RefCols = new List<string>();
-            public FkAccumulator(string ownerSchema, string ownerTable, string refSchema, string refTable) {
-                OwnerSchema = ownerSchema; OwnerTable = ownerTable;
-                RefSchema   = refSchema;   RefTable   = refTable;
-            }
-        }
 
         private sealed class CacheEntry {
             public readonly IMetadataProvider MetadataProvider;

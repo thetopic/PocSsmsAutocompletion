@@ -35,7 +35,8 @@
     <Compile Include="..\Completion\CompletionRequest.cs"    Link="_src\Completion\CompletionRequest.cs" />
     <Compile Include="..\Completion\ICompletionProvider.cs"  Link="_src\Completion\ICompletionProvider.cs" />
     <Compile Include="..\Completion\KeywordCompletionProvider.cs" Link="_src\Completion\KeywordCompletionProvider.cs" />
-    <Compile Include="..\Completion\CteCompletionProvider.cs"     Link="_src\Completion\CteCompletionProvider.cs" />
+    <Compile Include="..\Completion\CteCompletionProvider.cs"         Link="_src\Completion\CteCompletionProvider.cs" />
+    <Compile Include="..\Completion\InlineJoinCompletionProvider.cs"  Link="_src\Completion\InlineJoinCompletionProvider.cs" />
   </ItemGroup>
 
   <ItemGroup>

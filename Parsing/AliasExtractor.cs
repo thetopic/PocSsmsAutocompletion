@@ -1,15 +1,10 @@
 using Microsoft.SqlServer.Management.SqlParser.Parser;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 namespace SsmsAutocompletion {
 
     internal sealed class AliasExtractor : IAliasExtractor {
-
-        private static readonly Regex TableAliasRegex = new Regex(
-            @"(?:FROM|JOIN)\s+((?:\[?\w+\]?\.)?\[?\w+\]?)(?:\s+(?:AS\s+)?(\[?\w+\]?))?",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         private static readonly HashSet<string> SqlKeywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
             "SELECT","FROM","WHERE","JOIN","INNER","LEFT","RIGHT","OUTER","CROSS","FULL",
@@ -23,28 +18,6 @@ namespace SsmsAutocompletion {
             var map = new Dictionary<string, TableInfo>(StringComparer.OrdinalIgnoreCase);
             try { PopulateFromTokenManager(parseResult, map); }
             catch { }
-            return map;
-        }
-
-        public IReadOnlyDictionary<string, TableInfo> Extract(string sql) {
-            if (string.IsNullOrEmpty(sql)) return new Dictionary<string, TableInfo>();
-            var map = new Dictionary<string, TableInfo>(StringComparer.OrdinalIgnoreCase);
-            foreach (Match match in TableAliasRegex.Matches(sql)) {
-                string tableRef = match.Groups[1].Value.Trim('[', ']');
-                string alias    = match.Groups[2].Success ? match.Groups[2].Value.Trim('[', ']') : "";
-                string schema, tableName;
-                int dot = tableRef.LastIndexOf('.');
-                if (dot >= 0) {
-                    schema    = tableRef.Substring(0, dot).Trim('[', ']');
-                    tableName = tableRef.Substring(dot + 1).Trim('[', ']');
-                } else {
-                    schema    = "dbo";
-                    tableName = tableRef;
-                }
-                if (string.IsNullOrEmpty(alias) || SqlKeywords.Contains(alias)) alias = tableName;
-                if (!string.IsNullOrEmpty(tableName))
-                    map[alias.ToLowerInvariant()] = new TableInfo(schema, tableName);
-            }
             return map;
         }
 

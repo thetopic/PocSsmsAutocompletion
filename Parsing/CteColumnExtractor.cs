@@ -1,174 +1,159 @@
+using Microsoft.SqlServer.Management.SqlParser.Parser;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 namespace SsmsAutocompletion {
 
-    /// <summary>
-    /// Extrait les colonnes exposées par une CTE à partir du SQL brut.
-    ///
-    /// Deux stratégies, dans l'ordre :
-    ///   1. Colonne explicite  : WITH MaCte (col1, col2) AS (…)
-    ///   2. Colonne implicite  : déduites du SELECT interne de la CTE
-    ///      – alias AS nom     → nom
-    ///      – table.colonne    → colonne
-    ///      – colonne simple   → colonne
-    ///      – fonction sans AS → ignorée (pas de nom déterministe)
-    ///      – *                → ignoré
-    /// </summary>
     internal sealed class CteColumnExtractor : ICteColumnExtractor {
 
-        // "alias" dans  expr AS alias  (fin de l'expression)
-        private static readonly Regex AsAliasRegex = new Regex(
-            @"\bAS\s+(\[?\w+\]?)\s*$",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        public IReadOnlyList<string> ExtractColumns(ParseResult parseResult, string cteName) {
+            var tokenManager = parseResult?.Script?.TokenManager;
+            if (tokenManager == null) return Array.Empty<string>();
+            int count = tokenManager.Count;
 
-        // dernier mot dans  schema.table.colonne  ou  colonne
-        private static readonly Regex LastWordRegex = new Regex(
-            @"(\w+)\s*$",
-            RegexOptions.Compiled);
+            for (int i = 0; i < count; i++) {
+                string text = (tokenManager.GetText(i) ?? "").Trim('[', ']');
+                if (!string.Equals(text, cteName, StringComparison.OrdinalIgnoreCase)) continue;
 
-        // SELECT [TOP n] [DISTINCT] …
-        private static readonly Regex SelectPrefixRegex = new Regex(
-            @"^\s*SELECT\s+(?:TOP\s+\d+\s+)?(?:DISTINCT\s+)?",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline);
+                int afterNameIdx = NextSignificantIndex(tokenManager, i, count);
+                if (afterNameIdx < 0) continue;
+                string afterNameText = tokenManager.GetText(afterNameIdx) ?? "";
 
-        // ── API publique ─────────────────────────────────────────────────────
+                if (afterNameText == "(") {
+                    // Explicit column list: cte (col1, col2) AS (body)
+                    var explicitCols = TryExtractExplicitColumns(tokenManager, afterNameIdx, count);
+                    if (explicitCols != null) return explicitCols;
+                    continue;
+                }
+                if (!string.Equals(afterNameText, "AS", StringComparison.OrdinalIgnoreCase)) continue;
+                int bodyOpenIdx = NextSignificantIndex(tokenManager, afterNameIdx, count);
+                if (bodyOpenIdx < 0 || tokenManager.GetText(bodyOpenIdx) != "(") continue;
 
-        public IReadOnlyList<string> ExtractColumns(string sql, string cteName) {
-            if (string.IsNullOrEmpty(sql) || string.IsNullOrEmpty(cteName))
-                return Array.Empty<string>();
+                return ExtractColumnsFromBody(tokenManager, bodyOpenIdx, count);
+            }
 
-            // 1. Colonnes déclarées explicitement : WITH MaCte (col1, col2) AS (
-            var explicit_ = TryExtractExplicitColumns(sql, cteName);
-            if (explicit_ != null) return explicit_;
-
-            // 2. Corps de la CTE → SELECT list
-            string body = ExtractCteBody(sql, cteName);
-            if (body == null) return Array.Empty<string>();
-
-            return ParseSelectColumns(body);
+            return Array.Empty<string>();
         }
 
-        // ── Colonnes explicites ──────────────────────────────────────────────
-
-        private static IReadOnlyList<string> TryExtractExplicitColumns(string sql, string cteName) {
-            // Forme :  cteName  ( col1, [col2], … )  AS  (
-            var pattern = new Regex(
-                $@"\b{Regex.Escape(cteName)}\b\s*\(([^()]+)\)\s*AS\s*\(",
-                RegexOptions.IgnoreCase | RegexOptions.Singleline);
-            var m = pattern.Match(sql);
-            if (!m.Success) return null;
-
+        private static IReadOnlyList<string> TryExtractExplicitColumns(
+            TokenManager tokenManager, int openParen, int count) {
             var cols = new List<string>();
-            foreach (string part in m.Groups[1].Value.Split(',')) {
-                string col = part.Trim().Trim('[', ']');
+            int depth = 1;
+            int closeIdx = -1;
+            for (int i = openParen + 1; i < count && depth > 0; i++) {
+                string t = tokenManager.GetText(i) ?? "";
+                if (t == "(") { depth++; continue; }
+                if (t == ")") {
+                    depth--;
+                    if (depth == 0) { closeIdx = i; break; }
+                    continue;
+                }
+                if (depth != 1 || t == ",") continue;
+                bool sig = false;
+                try { sig = tokenManager.GetToken(i)?.IsSignificant == true; } catch { }
+                if (!sig) continue;
+                string col = t.Trim('[', ']');
                 if (!string.IsNullOrEmpty(col)) cols.Add(col);
             }
+            if (closeIdx < 0) return null;
+            int asIdx = NextSignificantIndex(tokenManager, closeIdx, count);
+            if (asIdx < 0 || !string.Equals(tokenManager.GetText(asIdx), "AS", StringComparison.OrdinalIgnoreCase))
+                return null;
+            int bodyOpenIdx = NextSignificantIndex(tokenManager, asIdx, count);
+            if (bodyOpenIdx < 0 || tokenManager.GetText(bodyOpenIdx) != "(") return null;
             return cols.Count > 0 ? cols.AsReadOnly() : null;
         }
 
-        // ── Extraction du corps de la CTE (parenthèses équilibrées) ─────────
-
-        private static string ExtractCteBody(string sql, string cteName) {
-            // Cherche  cteName  AS  (  (sans liste de colonnes explicite)
-            var startPattern = new Regex(
-                $@"\b{Regex.Escape(cteName)}\b\s+AS\s*\(",
-                RegexOptions.IgnoreCase | RegexOptions.Singleline);
-            var m = startPattern.Match(sql);
-            if (!m.Success) return null;
-
-            int openPos = m.Index + m.Length - 1; // position du '('
-            int depth   = 1;
-            for (int i = openPos + 1; i < sql.Length; i++) {
-                char c = sql[i];
-                if (c == '\'') {               // sauter les littéraux chaîne
-                    i++;
-                    while (i < sql.Length && sql[i] != '\'') i++;
-                }
-                else if (c == '(') depth++;
-                else if (c == ')') {
-                    depth--;
-                    if (depth == 0) return sql.Substring(openPos + 1, i - openPos - 1);
-                }
+        private static IReadOnlyList<string> ExtractColumnsFromBody(
+            TokenManager tokenManager, int bodyOpen, int count) {
+            // Find SELECT at depth 1 inside the CTE body
+            int depth = 1;
+            int selectIdx = -1;
+            for (int i = bodyOpen + 1; i < count && depth > 0; i++) {
+                string t = tokenManager.GetText(i) ?? "";
+                if (t == "(") { depth++; continue; }
+                if (t == ")") { depth--; continue; }
+                if (depth != 1) continue;
+                if (string.Equals(t, "SELECT", StringComparison.OrdinalIgnoreCase)) { selectIdx = i; break; }
             }
-            return null; // parenthèse non fermée (SQL incomplet en cours de frappe)
-        }
+            if (selectIdx < 0) return Array.Empty<string>();
 
-        // ── Analyse du SELECT interne ────────────────────────────────────────
+            // Skip TOP [n] and DISTINCT after SELECT
+            int pos = NextSignificantIndex(tokenManager, selectIdx, count);
+            if (pos < 0) return Array.Empty<string>();
+            if (string.Equals(tokenManager.GetText(pos), "TOP", StringComparison.OrdinalIgnoreCase)) {
+                pos = NextSignificantIndex(tokenManager, pos, count); // the number/expression
+                if (pos < 0) return Array.Empty<string>();
+                pos = NextSignificantIndex(tokenManager, pos, count); // token after it
+                if (pos < 0) return Array.Empty<string>();
+            }
+            if (string.Equals(tokenManager.GetText(pos), "DISTINCT", StringComparison.OrdinalIgnoreCase)) {
+                pos = NextSignificantIndex(tokenManager, pos, count);
+                if (pos < 0) return Array.Empty<string>();
+            }
 
-        private static IReadOnlyList<string> ParseSelectColumns(string body) {
-            var selectMatch = SelectPrefixRegex.Match(body);
-            if (!selectMatch.Success) return Array.Empty<string>();
+            // Collect column tokens; split by comma at depth == 1 (inside the CTE body)
+            // depth == 1 means "directly inside the CTE body, not inside a nested paren"
+            var chunks = new List<List<string>>();
+            var current = new List<string>();
+            depth = 1; // still inside the CTE body's outermost paren
 
-            string afterSelect = body.Substring(selectMatch.Index + selectMatch.Length);
+            for (int i = pos; i < count; i++) {
+                string t = tokenManager.GetText(i) ?? "";
 
-            // S'arrête au premier FROM non imbriqué
-            int fromIdx = FindFromIndex(afterSelect);
-            string selectList = fromIdx >= 0
-                ? afterSelect.Substring(0, fromIdx)
-                : afterSelect;
+                if (t == "(") {
+                    depth++;
+                } else if (t == ")") {
+                    depth--;
+                    if (depth == 0) {
+                        if (current.Count > 0) chunks.Add(new List<string>(current));
+                        break;
+                    }
+                } else if (depth == 1) {
+                    if (string.Equals(t, "FROM", StringComparison.OrdinalIgnoreCase)) {
+                        if (current.Count > 0) chunks.Add(new List<string>(current));
+                        break;
+                    }
+                    if (t == ",") {
+                        if (current.Count > 0) chunks.Add(new List<string>(current));
+                        current = new List<string>();
+                        continue;
+                    }
+                }
+
+                bool sig = false;
+                try { sig = tokenManager.GetToken(i)?.IsSignificant == true; } catch { }
+                if (sig) current.Add(t);
+            }
+            if (current.Count > 0) chunks.Add(current);
 
             var columns = new List<string>();
-            foreach (string part in SplitRespectingParens(selectList)) {
-                string col = ExtractColumnName(part.Trim());
+            foreach (var chunk in chunks) {
+                string col = ExtractColumnName(chunk);
                 if (!string.IsNullOrEmpty(col)) columns.Add(col);
             }
             return columns.AsReadOnly();
         }
 
-        // Trouve l'index du mot-clé FROM au niveau 0 (hors sous-requêtes)
-        private static int FindFromIndex(string text) {
-            int depth = 0;
-            for (int i = 0; i < text.Length; i++) {
-                char c = text[i];
-                if (c == '(') { depth++; continue; }
-                if (c == ')') { depth--; continue; }
-                if (depth > 0) continue;
-                if (i + 4 <= text.Length
-                    && text.Substring(i, 4).Equals("FROM", StringComparison.OrdinalIgnoreCase)
-                    && (i == 0            || !char.IsLetterOrDigit(text[i - 1]))
-                    && (i + 4 >= text.Length || !char.IsLetterOrDigit(text[i + 4])))
-                    return i;
+        private static string ExtractColumnName(List<string> tokens) {
+            if (tokens.Count == 0) return null;
+            string last = tokens[tokens.Count - 1].Trim('[', ']');
+            if (last == "*") return null;
+            if (last == ")") return null; // function without alias
+            if (tokens.Count >= 2) {
+                string prev = tokens[tokens.Count - 2];
+                if (string.Equals(prev, "AS", StringComparison.OrdinalIgnoreCase)) return last;
+                if (prev == ".") return last;
+            }
+            return last;
+        }
+
+        private static int NextSignificantIndex(TokenManager tokenManager, int startIndex, int count) {
+            for (int i = startIndex + 1; i < count; i++) {
+                try { if (tokenManager.GetToken(i)?.IsSignificant == true) return i; }
+                catch { }
             }
             return -1;
-        }
-
-        // Split par virgule en respectant les parenthèses imbriquées
-        private static List<string> SplitRespectingParens(string text) {
-            var parts = new List<string>();
-            int depth = 0, start = 0;
-            for (int i = 0; i < text.Length; i++) {
-                if (text[i] == '(')      depth++;
-                else if (text[i] == ')') depth--;
-                else if (text[i] == ',' && depth == 0) {
-                    parts.Add(text.Substring(start, i - start));
-                    start = i + 1;
-                }
-            }
-            parts.Add(text.Substring(start));
-            return parts;
-        }
-
-        // Extrait le nom de colonne d'un item du SELECT
-        private static string ExtractColumnName(string item) {
-            if (string.IsNullOrWhiteSpace(item)) return null;
-            string trimmed = item.Trim();
-
-            // SELECT * ou table.*
-            if (trimmed == "*" || trimmed.EndsWith(".*")) return null;
-
-            // expr AS alias  →  alias
-            var asMatch = AsAliasRegex.Match(trimmed);
-            if (asMatch.Success)
-                return asMatch.Groups[1].Value.Trim('[', ']');
-
-            // Fonction sans alias : SUM(…), COUNT(…), CAST(…) → pas de nom fiable
-            if (trimmed.EndsWith(")")) return null;
-
-            // Dernier mot : schema.table.colonne → colonne  /  colonne → colonne
-            var lastWord = LastWordRegex.Match(trimmed);
-            return lastWord.Success ? lastWord.Value.Trim('[', ']') : null;
         }
     }
 }

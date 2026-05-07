@@ -26,9 +26,7 @@ namespace SsmsAutocompletion {
         }
 
         private TableInfo ResolveTable(CompletionRequest request) {
-            var aliasMap = request.ParseResult != null
-                ? _aliasExtractor.Extract(request.ParseResult)
-                : _aliasExtractor.Extract(request.Sql);
+            var aliasMap = _aliasExtractor.Extract(request.ParseResult);
             aliasMap.TryGetValue(request.Qualifier.ToLowerInvariant(), out TableInfo tableInfo);
             if (tableInfo != null) return tableInfo;
             return _databaseMetadata.GetTables(request.ConnectionKey)

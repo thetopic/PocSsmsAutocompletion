@@ -26,7 +26,7 @@ namespace SsmsAutocompletion {
             bool isJoinOnContext    = _contextDetector.IsAfterKeyword(parseResult, line, column, "ON");
             bool isAfterJoinKeyword = _contextDetector.IsAfterKeyword(parseResult, line, column, "JOIN");
             bool isWhereContext     = _contextDetector.IsInsideWhereClause(parseResult, line, column);
-            var (isAfterTable, tableNameBefore) = _contextDetector.DetectAliasContext(parseResult, sql, line, column, caretPosition);
+            var (isAfterTable, tableNameBefore) = _contextDetector.DetectAliasContext(parseResult, line, column);
             return new CompletionRequest(
                 sql, caretPosition, line, column,
                 connectionKey, parseResult, metadataProvider,

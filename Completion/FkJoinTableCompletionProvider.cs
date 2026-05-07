@@ -26,9 +26,7 @@ namespace SsmsAutocompletion {
             if (!request.IsAfterJoinKeyword)                              return Array.Empty<CompletionItem>();
             if (request.ConnectionKey == null || request.ConnectionKey.IsEmpty) return Array.Empty<CompletionItem>();
 
-            var aliasMap = request.ParseResult != null
-                ? _aliasExtractor.Extract(request.ParseResult)
-                : _aliasExtractor.Extract(request.Sql);
+            var aliasMap = _aliasExtractor.Extract(request.ParseResult);
 
             if (aliasMap.Count == 0) return Array.Empty<CompletionItem>();
 

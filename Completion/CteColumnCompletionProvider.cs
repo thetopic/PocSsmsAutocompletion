@@ -29,7 +29,7 @@ namespace SsmsAutocompletion {
             string cteName = ResolveCteNameFromQualifier(request);
             if (cteName == null) return Array.Empty<CompletionItem>();
 
-            var columns = _cteColumnExtractor.ExtractColumns(request.Sql, cteName);
+            var columns = _cteColumnExtractor.ExtractColumns(request.ParseResult, cteName);
             if (columns.Count == 0) return Array.Empty<CompletionItem>();
 
             var items = new List<CompletionItem>(columns.Count);
@@ -44,7 +44,7 @@ namespace SsmsAutocompletion {
         ///   - le qualifier est un alias qui pointe vers une CTE (ex: mc.col  où mc = MaCte)
         /// </summary>
         private string ResolveCteNameFromQualifier(CompletionRequest request) {
-            var cteNames = _cteExtractor.Extract(request.Sql);
+            var cteNames = _cteExtractor.Extract(request.ParseResult);
             if (cteNames.Count == 0) return null;
 
             // Correspondance directe
@@ -53,9 +53,7 @@ namespace SsmsAutocompletion {
             if (direct != null) return direct;
 
             // Via alias :  FROM MaCte mc  →  qualifier = "mc"
-            var aliasMap = request.ParseResult != null
-                ? _aliasExtractor.Extract(request.ParseResult)
-                : _aliasExtractor.Extract(request.Sql);
+            var aliasMap = _aliasExtractor.Extract(request.ParseResult);
 
             if (aliasMap.TryGetValue(request.Qualifier.ToLowerInvariant(), out var tableInfo)) {
                 string viaAlias = cteNames.FirstOrDefault(

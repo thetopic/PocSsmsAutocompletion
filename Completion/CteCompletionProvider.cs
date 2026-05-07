@@ -15,7 +15,7 @@ namespace SsmsAutocompletion {
 
         public IReadOnlyList<CompletionItem> GetCompletions(CompletionRequest request) {
             if (request.IsDotContext) return Array.Empty<CompletionItem>();
-            var names = _cteExtractor.Extract(request.Sql);
+            var names = _cteExtractor.Extract(request.ParseResult);
             if (names.Count == 0) return Array.Empty<CompletionItem>();
             var items = new List<CompletionItem>(names.Count);
             foreach (string name in names)

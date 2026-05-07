@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git Workflow
+
+**Never commit autonomously — always ask first.**
+
+Before creating any git commit, ask the user for confirmation. Do not commit even if the user says "save the changes" or "it's done" — only commit when explicitly told to do so with a clear instruction like "commit" or "commit the changes".
+
 ## Project Overview
 
 This is a **Visual Studio Extension (VSIX)** that adds SQL IntelliSense/autocomplete to **SQL Server Management Studio (SSMS) v22**. It's a proof-of-concept written in C# targeting .NET Framework 4.8.1.

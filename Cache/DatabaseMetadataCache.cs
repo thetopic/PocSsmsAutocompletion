@@ -17,9 +17,9 @@ namespace SsmsAutocompletion {
         private static readonly Dictionary<string, CacheEntry> Entries =
             new Dictionary<string, CacheEntry>(StringComparer.OrdinalIgnoreCase);
 
-        public void WarmAsync(ConnectionKey connectionKey, ServerConnection serverConnection) {
+        public void Warm(ConnectionKey connectionKey, ServerConnection serverConnection) {
             if (connectionKey == null || connectionKey.IsEmpty || serverConnection == null) return;
-            Task.Run(() => EnsureLoaded(connectionKey, serverConnection));
+            _ = Task.Run(() => EnsureLoaded(connectionKey, serverConnection));
         }
 
         public IMetadataProvider GetMetadataProvider(ConnectionKey connectionKey) {

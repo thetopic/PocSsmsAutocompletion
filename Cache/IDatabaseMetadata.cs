@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace SsmsAutocompletion {
 
     internal interface IDatabaseMetadata {
-        void WarmAsync(ConnectionKey connectionKey, ServerConnection serverConnection);
+        void Warm(ConnectionKey connectionKey, ServerConnection serverConnection);
         IMetadataProvider GetMetadataProvider(ConnectionKey connectionKey);
         IReadOnlyList<TableInfo> GetTables(ConnectionKey connectionKey);
         IReadOnlyList<ColumnInfo> GetColumns(ConnectionKey connectionKey, string schema, string tableName);

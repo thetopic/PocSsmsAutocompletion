@@ -90,7 +90,7 @@ namespace SsmsAutocompletion {
             var snapshot         = _textView.TextBuffer.CurrentSnapshot;
             var capturedKey      = _connectionKey;
             _popup.Dismiss();
-            Task.Run(() => TriggerAsync(snapshot, caretPosition, sql, capturedKey));
+            _ = Task.Run(() => Trigger(snapshot, caretPosition, sql, capturedKey));
         }
 
         private void HandleTypeChar(IntPtr pvaIn) {
@@ -115,7 +115,7 @@ namespace SsmsAutocompletion {
             }
             string sql      = snapshot.GetText();
             var capturedKey = _connectionKey;
-            Task.Run(() => TriggerAsync(snapshot, caretPosition, sql, capturedKey));
+            _ = Task.Run(() => Trigger(snapshot, caretPosition, sql, capturedKey));
         }
 
         private void HandleDotCharacter() {
@@ -125,7 +125,7 @@ namespace SsmsAutocompletion {
             var snapshot      = _textView.TextBuffer.CurrentSnapshot;
             var capturedKey   = _connectionKey;
             _popup.Dismiss();
-            Task.Run(() => TriggerAsync(snapshot, caretPosition, sql, capturedKey));
+            _ = Task.Run(() => Trigger(snapshot, caretPosition, sql, capturedKey));
         }
 
         private void HandleSpaceCharacter() {
@@ -137,18 +137,20 @@ namespace SsmsAutocompletion {
             string sql      = snapshot.GetText();
             var capturedKey = _connectionKey;
             _popup.Dismiss();
-            Task.Run(() => TriggerAsync(snapshot, caretPosition, sql, capturedKey));
+            _ = Task.Run(() => Trigger(snapshot, caretPosition, sql, capturedKey));
         }
 
-        private void TriggerAsync(ITextSnapshot snapshot, int caretPosition, string sql, ConnectionKey connectionKey) {
+        private void Trigger(ITextSnapshot snapshot, int caretPosition, string sql, ConnectionKey connectionKey) {
             try {
                 var items    = _completionEngine.GetCompletions(snapshot, sql, caretPosition, connectionKey);
                 if (items.Count == 0) return;
                 var wordSpan = _contextDetector.GetWordSpan(snapshot, caretPosition);
-                _textView.VisualElement.Dispatcher.InvokeAsync(() => {
+#pragma warning disable VSTHRD001
+                _ = _textView.VisualElement.Dispatcher.InvokeAsync(() => {
                     if (!_textView.IsClosed && !_popup.IsVisible)
                         _popup.Show(new System.Collections.Generic.List<CompletionItem>(items), wordSpan);
                 });
+#pragma warning restore VSTHRD001
             }
             catch { }
         }
@@ -160,7 +162,7 @@ namespace SsmsAutocompletion {
             _databaseMetadata.Invalidate(_connectionKey);
             _connectionKey = freshKey;
             var serverConnection = _connectionInfoProvider.BuildServerConnection();
-            _databaseMetadata.WarmAsync(_connectionKey, serverConnection);
+            _databaseMetadata.Warm(_connectionKey, serverConnection);
         }
 
         private static bool IsContextTriggerWord(string word) {

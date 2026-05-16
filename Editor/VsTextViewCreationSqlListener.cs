@@ -45,7 +45,7 @@ namespace SsmsAutocompletion {
             var connectionKey    = ConnectionInfoProvider.GetConnectionKey();
             var serverConnection = ConnectionInfoProvider.BuildServerConnection();
             UpdateTrackedConnectionKey(textViewAdapter, connectionKey);
-            DatabaseMetadata.WarmAsync(connectionKey, serverConnection);
+            DatabaseMetadata.Warm(connectionKey, serverConnection);
             IWpfTextView textView = AdaptersFactory?.GetWpfTextView(textViewAdapter);
             if (textView == null) return;
             var commandFilter = BuildCommandFilter(textView, connectionKey);

@@ -14,6 +14,7 @@ namespace SsmsAutocompletion {
         public IMetadataProvider MetadataProvider  { get; }
         public bool              IsDotContext      { get; }
         public string            Qualifier         { get; }
+        public bool              IsAfterFromKeyword     { get; }
         public bool              IsJoinOnContext        { get; }
         public bool              IsAfterJoinKeyword     { get; }
         public bool              IsWhereContext         { get; }
@@ -25,8 +26,8 @@ namespace SsmsAutocompletion {
             string sql, int caretPosition, int line, int column,
             ConnectionKey connectionKey, ParseResult parseResult,
             IMetadataProvider metadataProvider, bool isDotContext, string qualifier,
-            bool isJoinOnContext, bool isAfterJoinKeyword, bool isWhereContext,
-            bool isAfterTableInFromJoin, string tableNameBeforeCursor,
+            bool isAfterFromKeyword, bool isJoinOnContext, bool isAfterJoinKeyword,
+            bool isWhereContext, bool isAfterTableInFromJoin, string tableNameBeforeCursor,
             ITextSnapshot snapshot) {
             Sql                    = sql;
             CaretPosition          = caretPosition;
@@ -37,6 +38,7 @@ namespace SsmsAutocompletion {
             MetadataProvider       = metadataProvider;
             IsDotContext           = isDotContext;
             Qualifier              = qualifier;
+            IsAfterFromKeyword     = isAfterFromKeyword;
             IsJoinOnContext        = isJoinOnContext;
             IsAfterJoinKeyword     = isAfterJoinKeyword;
             IsWhereContext         = isWhereContext;

@@ -167,6 +167,7 @@ namespace SsmsAutocompletion {
 
         private static bool IsContextTriggerWord(string word) {
             switch (word.ToUpperInvariant()) {
+                case "FROM":
                 case "ON":
                 case "WHERE":
                 case "AND":

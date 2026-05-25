@@ -146,7 +146,8 @@ namespace SsmsAutocompletion {
         private static readonly IReadOnlyList<CompletionItem> CachedItems = BuildItems();
 
         public IReadOnlyList<CompletionItem> GetCompletions(CompletionRequest request) {
-            if (request.IsDotContext) return Array.Empty<CompletionItem>();
+            if (request.IsDotContext)       return Array.Empty<CompletionItem>();
+            if (request.IsAfterFromKeyword) return Array.Empty<CompletionItem>();
             return CachedItems;
         }
 

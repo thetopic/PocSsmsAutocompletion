@@ -15,38 +15,41 @@
     full runtime assets so tests can run outside VS.
   -->
   <ItemGroup Label="Logic files under test (linked)">
-    <Compile Include="..\Models\CompletionItem.cs"      Link="_src\Models\CompletionItem.cs" />
-    <Compile Include="..\Models\TableInfo.cs"           Link="_src\Models\TableInfo.cs" />
-    <Compile Include="..\Models\ColumnInfo.cs"          Link="_src\Models\ColumnInfo.cs" />
-    <Compile Include="..\Models\ForeignKeyInfo.cs"      Link="_src\Models\ForeignKeyInfo.cs" />
-    <Compile Include="..\Models\ConnectionKey.cs"       Link="_src\Models\ConnectionKey.cs" />
-    <Compile Include="..\Parsing\AliasGenerator.cs"     Link="_src\Parsing\AliasGenerator.cs" />
-    <Compile Include="..\Parsing\ISqlParser.cs"         Link="_src\Parsing\ISqlParser.cs" />
-    <Compile Include="..\Parsing\SsmsSqlParser.cs"      Link="_src\Parsing\SsmsSqlParser.cs" />
-    <Compile Include="..\Parsing\IAliasExtractor.cs"    Link="_src\Parsing\IAliasExtractor.cs" />
-    <Compile Include="..\Parsing\AliasExtractor.cs"     Link="_src\Parsing\AliasExtractor.cs" />
-    <Compile Include="..\Parsing\ICteExtractor.cs"      Link="_src\Parsing\ICteExtractor.cs" />
-    <Compile Include="..\Parsing\CteExtractor.cs"       Link="_src\Parsing\CteExtractor.cs" />
+    <Compile Include="..\Models\CompletionItem.cs" Link="_src\Models\CompletionItem.cs" />
+    <Compile Include="..\Models\TableInfo.cs" Link="_src\Models\TableInfo.cs" />
+    <Compile Include="..\Models\ColumnInfo.cs" Link="_src\Models\ColumnInfo.cs" />
+    <Compile Include="..\Models\ForeignKeyInfo.cs" Link="_src\Models\ForeignKeyInfo.cs" />
+    <Compile Include="..\Models\ConnectionKey.cs" Link="_src\Models\ConnectionKey.cs" />
+    <Compile Include="..\Parsing\AliasGenerator.cs" Link="_src\Parsing\AliasGenerator.cs" />
+    <Compile Include="..\Parsing\ISqlParser.cs" Link="_src\Parsing\ISqlParser.cs" />
+    <Compile Include="..\Parsing\SsmsSqlParser.cs" Link="_src\Parsing\SsmsSqlParser.cs" />
+    <Compile Include="..\Parsing\IAliasExtractor.cs" Link="_src\Parsing\IAliasExtractor.cs" />
+    <Compile Include="..\Parsing\AliasExtractor.cs" Link="_src\Parsing\AliasExtractor.cs" />
+    <Compile Include="..\Parsing\ICteExtractor.cs" Link="_src\Parsing\ICteExtractor.cs" />
+    <Compile Include="..\Parsing\CteExtractor.cs" Link="_src\Parsing\CteExtractor.cs" />
     <Compile Include="..\Parsing\ICteColumnExtractor.cs" Link="_src\Parsing\ICteColumnExtractor.cs" />
     <Compile Include="..\Parsing\CteColumnExtractor.cs" Link="_src\Parsing\CteColumnExtractor.cs" />
-    <Compile Include="..\Parsing\IContextDetector.cs"   Link="_src\Parsing\IContextDetector.cs" />
+    <Compile Include="..\Parsing\IContextDetector.cs" Link="_src\Parsing\IContextDetector.cs" />
     <Compile Include="..\Parsing\SqlContextDetector.cs" Link="_src\Parsing\SqlContextDetector.cs" />
-    <Compile Include="..\Cache\IDatabaseMetadata.cs"    Link="_src\Cache\IDatabaseMetadata.cs" />
-    <Compile Include="..\Completion\CompletionRequest.cs"    Link="_src\Completion\CompletionRequest.cs" />
-    <Compile Include="..\Completion\ICompletionProvider.cs"  Link="_src\Completion\ICompletionProvider.cs" />
+    <Compile Include="..\Cache\IDatabaseMetadata.cs" Link="_src\Cache\IDatabaseMetadata.cs" />
+    <Compile Include="..\Completion\CompletionRequest.cs" Link="_src\Completion\CompletionRequest.cs" />
+    <Compile Include="..\Completion\CompletionRequestBuilder.cs" Link="_src\Completion\CompletionRequestBuilder.cs" />
+    <Compile Include="..\Completion\ICompletionProvider.cs" Link="_src\Completion\ICompletionProvider.cs" />
     <Compile Include="..\Completion\KeywordCompletionProvider.cs" Link="_src\Completion\KeywordCompletionProvider.cs" />
-    <Compile Include="..\Completion\CteCompletionProvider.cs"         Link="_src\Completion\CteCompletionProvider.cs" />
-    <Compile Include="..\Completion\InlineJoinCompletionProvider.cs"  Link="_src\Completion\InlineJoinCompletionProvider.cs" />
+    <Compile Include="..\Completion\NativeCompletionProvider.cs" Link="_src\Completion\NativeCompletionProvider.cs" />
+    <Compile Include="..\Completion\FunctionCompletionProvider.cs" Link="_src\Completion\FunctionCompletionProvider.cs" />
+    <Compile Include="..\Completion\CteCompletionProvider.cs" Link="_src\Completion\CteCompletionProvider.cs" />
+    <Compile Include="..\Completion\InlineJoinCompletionProvider.cs" Link="_src\Completion\InlineJoinCompletionProvider.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk"   Version="17.11.1" />
-    <PackageReference Include="MSTest.TestAdapter"        Version="3.6.4" />
-    <PackageReference Include="MSTest.TestFramework"      Version="3.6.4" />
-    <PackageReference Include="Moq"                       Version="4.20.72" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.2.3" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.2.3" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <!-- SQL parser types (ParseResult, TokenManager, SqlCodeDom, IMetadataProvider) -->
-    <PackageReference Include="Microsoft.SqlServer.Management.SqlParser"          Version="173.8.0" />
-    <PackageReference Include="Microsoft.SqlServer.Management.SmoMetadataProvider" Version="181.15.0" />
+    <PackageReference Include="Microsoft.SqlServer.Management.SqlParser" Version="173.8.0" />
+    <PackageReference Include="Microsoft.SqlServer.Management.SmoMetadataProvider" Version="181.19.0" />
     <!-- VS Text interfaces (ITextSnapshot, SnapshotPoint, ITrackingSpan…) -->
     <PackageReference Include="Microsoft.VisualStudio.Text.Data" Version="17.14.249" />
   </ItemGroup>

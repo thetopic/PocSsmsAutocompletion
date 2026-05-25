@@ -8,11 +8,14 @@ namespace SsmsAutocompletion.Tests {
 
         private static readonly KeywordCompletionProvider Provider = new KeywordCompletionProvider();
 
-        private static CompletionRequest Make(bool isDotContext = false) =>
+        private static CompletionRequest Make(
+            bool isDotContext       = false,
+            bool isAfterFromKeyword = false) =>
             new CompletionRequest(
                 sql: "SELECT", caretPosition: 0, line: 1, column: 1,
                 connectionKey: null, parseResult: null, metadataProvider: null,
                 isDotContext: isDotContext, qualifier: null,
+                isAfterFromKeyword: isAfterFromKeyword,
                 isJoinOnContext: false, isAfterJoinKeyword: false,
                 isWhereContext: false, isAfterTableInFromJoin: false,
                 tableNameBeforeCursor: null, snapshot: null);
@@ -29,6 +32,18 @@ namespace SsmsAutocompletion.Tests {
         public void DotContext_ReturnsEmpty() {
             var items = Provider.GetCompletions(Make(isDotContext: true));
             Assert.AreEqual(0, items.Count);
+        }
+
+        [TestMethod]
+        public void AfterFromContext_ReturnsEmpty() {
+            var items = Provider.GetCompletions(Make(isAfterFromKeyword: true));
+            Assert.AreEqual(0, items.Count);
+        }
+
+        [TestMethod]
+        public void NotAfterFromContext_ReturnsKeywords() {
+            var items = Provider.GetCompletions(Make(isAfterFromKeyword: false));
+            Assert.IsTrue(items.Count > 0);
         }
 
         // ── Keyword coverage ───────────────────────────────────────────────────

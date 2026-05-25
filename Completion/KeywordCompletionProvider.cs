@@ -14,6 +14,7 @@ namespace SsmsAutocompletion {
 
         public IReadOnlyList<CompletionItem> GetCompletions(CompletionRequest request) {
             if (request.IsDotContext) return Array.Empty<CompletionItem>();
+            if (request.IsAfterFromKeyword) return Array.Empty<CompletionItem>();
             var items = new List<CompletionItem>(Keywords.Count);
             foreach (string keyword in Keywords)
                 items.Add(new CompletionItem(keyword, keyword + " ", "Keyword", CompletionItemKind.Keyword));

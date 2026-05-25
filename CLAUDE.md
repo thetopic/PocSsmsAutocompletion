@@ -49,6 +49,10 @@ Keystroke → SqlCommandFilter.Exec()
 
 ## Development Rules
 
+**Write tests first — always.**
+
+Before implementing any new behaviour, write a failing test in `SsmsAutocompletion.Tests` that captures the expected result. Only then write the production code to make it pass. This applies to new features, bug fixes, and refactors alike.
+
 **Always use the SSMS SQL parser — never regex, never hand-written extraction.**
 
 The SSMS parser (`Microsoft.SqlServer.Management.SqlParser`) exposes two complementary APIs. Choose the right one for the task:

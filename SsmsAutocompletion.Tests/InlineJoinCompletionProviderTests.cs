@@ -48,6 +48,7 @@ namespace SsmsAutocompletion.Tests {
                 connectionKey: connectionKey ?? new ConnectionKey("Server|DB"),
                 parseResult: null, metadataProvider: null,
                 isDotContext: isDotContext, qualifier: null,
+                isAfterFromKeyword: false,
                 isJoinOnContext: false, isAfterJoinKeyword: false,
                 isWhereContext: false,
                 isAfterTableInFromJoin: isAfterTableInFromJoin,

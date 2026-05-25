@@ -23,6 +23,10 @@ namespace SsmsAutocompletion {
             var metadataProvider = _databaseMetadata.GetMetadataProvider(connectionKey);
             bool isDotContext  = _contextDetector.IsDotContext(snapshot, caretPosition);
             string qualifier   = isDotContext ? _contextDetector.GetQualifier(snapshot, caretPosition) : null;
+            var  currentWord        = _contextDetector.GetCurrentWord(snapshot, caretPosition);
+            bool isAfterFromKeyword = string.Equals(
+                _contextDetector.GetWordBefore(snapshot, caretPosition - currentWord.Length),
+                "FROM", System.StringComparison.OrdinalIgnoreCase);
             bool isJoinOnContext    = _contextDetector.IsAfterKeyword(parseResult, line, column, "ON");
             bool isAfterJoinKeyword = _contextDetector.IsAfterKeyword(parseResult, line, column, "JOIN");
             bool isWhereContext     = _contextDetector.IsInsideWhereClause(parseResult, line, column);
@@ -31,7 +35,7 @@ namespace SsmsAutocompletion {
                 sql, caretPosition, line, column,
                 connectionKey, parseResult, metadataProvider,
                 isDotContext, qualifier,
-                isJoinOnContext, isAfterJoinKeyword, isWhereContext,
+                isAfterFromKeyword, isJoinOnContext, isAfterJoinKeyword, isWhereContext,
                 isAfterTable, tableNameBefore,
                 snapshot);
         }

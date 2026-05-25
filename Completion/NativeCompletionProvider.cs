@@ -9,6 +9,7 @@ namespace SsmsAutocompletion {
 
         public IReadOnlyList<CompletionItem> GetCompletions(CompletionRequest request) {
             if (request.ParseResult == null) return Array.Empty<CompletionItem>();
+            if (request.IsAfterFromKeyword) return Array.Empty<CompletionItem>();
             var items = new List<CompletionItem>();
             try {
                 var displayProvider  = request.MetadataProvider as IMetadataDisplayInfoProvider;

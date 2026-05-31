@@ -40,6 +40,12 @@
     <Compile Include="..\Completion\FunctionCompletionProvider.cs" Link="_src\Completion\FunctionCompletionProvider.cs" />
     <Compile Include="..\Completion\CteCompletionProvider.cs" Link="_src\Completion\CteCompletionProvider.cs" />
     <Compile Include="..\Completion\InlineJoinCompletionProvider.cs" Link="_src\Completion\InlineJoinCompletionProvider.cs" />
+    <Compile Include="..\Completion\TableCompletionProvider.cs" Link="_src\Completion\TableCompletionProvider.cs" />
+    <Compile Include="..\Completion\StoredProcedureCompletionProvider.cs" Link="_src\Completion\StoredProcedureCompletionProvider.cs" />
+    <Compile Include="..\Models\ParameterInfo.cs" Link="_src\Models\ParameterInfo.cs" />
+    <Compile Include="..\Models\ProcedureInfo.cs" Link="_src\Models\ProcedureInfo.cs" />
+    <Compile Include="..\Models\UserFunctionInfo.cs" Link="_src\Models\UserFunctionInfo.cs" />
+    <Compile Include="..\Completion\UserDefinedFunctionCompletionProvider.cs" Link="_src\Completion\UserDefinedFunctionCompletionProvider.cs" />
   </ItemGroup>
 
   <ItemGroup>

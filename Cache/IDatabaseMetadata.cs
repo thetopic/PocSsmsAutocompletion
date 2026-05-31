@@ -10,6 +10,8 @@ namespace SsmsAutocompletion {
         IReadOnlyList<TableInfo> GetTables(ConnectionKey connectionKey);
         IReadOnlyList<ColumnInfo> GetColumns(ConnectionKey connectionKey, string schema, string tableName);
         IReadOnlyList<ForeignKeyInfo> GetForeignKeys(ConnectionKey connectionKey, string schema, string tableName);
+        IReadOnlyList<ProcedureInfo>      GetProcedures(ConnectionKey connectionKey);
+        IReadOnlyList<UserFunctionInfo>   GetUserDefinedFunctions(ConnectionKey connectionKey);
         void Invalidate(ConnectionKey connectionKey);
     }
 }

@@ -31,13 +31,14 @@ namespace SsmsAutocompletion {
             bool isAfterJoinKeyword = _contextDetector.IsAfterKeyword(parseResult, line, column, "JOIN");
             bool isWhereContext     = _contextDetector.IsInsideWhereClause(parseResult, line, column);
             var (isAfterTable, tableNameBefore) = _contextDetector.DetectAliasContext(parseResult, line, column);
+            bool isAfterExecKeyword = _contextDetector.IsAfterExecKeyword(parseResult, line, column);
             return new CompletionRequest(
                 sql, caretPosition, line, column,
                 connectionKey, parseResult, metadataProvider,
                 isDotContext, qualifier,
                 isAfterFromKeyword, isJoinOnContext, isAfterJoinKeyword, isWhereContext,
                 isAfterTable, tableNameBefore,
-                snapshot);
+                snapshot, isAfterExecKeyword);
         }
     }
 }

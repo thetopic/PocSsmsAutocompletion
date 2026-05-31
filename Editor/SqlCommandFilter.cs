@@ -59,7 +59,7 @@ namespace SsmsAutocompletion {
                 case VSConstants.VSStd2KCmdID.TAB:
                     if (!_popup.IsVisible) return VSConstants.E_FAIL;
                     var committed = _popup.Commit();
-                    if (committed?.Description == "Table")
+                    if (committed?.Description == "Table" || committed?.Description == "View")
                         TriggerCompletionFromExplicitCommand();
                     return VSConstants.S_OK;
                 case VSConstants.VSStd2KCmdID.CANCEL:
@@ -173,6 +173,8 @@ namespace SsmsAutocompletion {
                 case "AND":
                 case "OR":
                 case "JOIN":
+                case "EXEC":
+                case "EXECUTE":
                     return true;
                 default:
                     return false;

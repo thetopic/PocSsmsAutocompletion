@@ -21,6 +21,7 @@ namespace SsmsAutocompletion {
         public bool              IsAfterTableInFromJoin { get; }
         public string            TableNameBeforeCursor  { get; }
         public ITextSnapshot     Snapshot               { get; }
+        public bool              IsAfterExecKeyword     { get; }
 
         public CompletionRequest(
             string sql, int caretPosition, int line, int column,
@@ -28,7 +29,7 @@ namespace SsmsAutocompletion {
             IMetadataProvider metadataProvider, bool isDotContext, string qualifier,
             bool isAfterFromKeyword, bool isJoinOnContext, bool isAfterJoinKeyword,
             bool isWhereContext, bool isAfterTableInFromJoin, string tableNameBeforeCursor,
-            ITextSnapshot snapshot) {
+            ITextSnapshot snapshot, bool isAfterExecKeyword = false) {
             Sql                    = sql;
             CaretPosition          = caretPosition;
             Line                   = line;
@@ -45,6 +46,7 @@ namespace SsmsAutocompletion {
             IsAfterTableInFromJoin = isAfterTableInFromJoin;
             TableNameBeforeCursor  = tableNameBeforeCursor;
             Snapshot               = snapshot;
+            IsAfterExecKeyword     = isAfterExecKeyword;
         }
     }
 }

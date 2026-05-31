@@ -64,6 +64,24 @@ namespace SsmsAutocompletion {
             return Array.Empty<ForeignKeyInfo>();
         }
 
+        public IReadOnlyList<ProcedureInfo> GetProcedures(ConnectionKey connectionKey) {
+            if (connectionKey == null || connectionKey.IsEmpty) return Array.Empty<ProcedureInfo>();
+            lock (Lock) {
+                if (Entries.TryGetValue(connectionKey.ToString(), out var entry) && !entry.IsExpired)
+                    return entry.Procedures;
+            }
+            return Array.Empty<ProcedureInfo>();
+        }
+
+        public IReadOnlyList<UserFunctionInfo> GetUserDefinedFunctions(ConnectionKey connectionKey) {
+            if (connectionKey == null || connectionKey.IsEmpty) return Array.Empty<UserFunctionInfo>();
+            lock (Lock) {
+                if (Entries.TryGetValue(connectionKey.ToString(), out var entry) && !entry.IsExpired)
+                    return entry.UserFunctions;
+            }
+            return Array.Empty<UserFunctionInfo>();
+        }
+
         public void Invalidate(ConnectionKey connectionKey) {
             if (connectionKey == null || connectionKey.IsEmpty) return;
             lock (Lock) { Entries.Remove(connectionKey.ToString()); }
@@ -85,13 +103,15 @@ namespace SsmsAutocompletion {
             var tables        = new List<TableInfo>();
             var columnMap     = new Dictionary<string, List<ColumnInfo>>(StringComparer.OrdinalIgnoreCase);
             var foreignKeyMap = new Dictionary<string, List<ForeignKeyInfo>>(StringComparer.OrdinalIgnoreCase);
+            var procedures    = new List<ProcedureInfo>();
+            var userFunctions = new List<UserFunctionInfo>();
             IMetadataProvider metadataProvider = null;
             try {
                 metadataProvider = SmoMetadataProvider.CreateConnectedProvider(serverConnection);
-                Loader.Load(serverConnection, tables, columnMap, foreignKeyMap);
+                Loader.Load(serverConnection, tables, columnMap, foreignKeyMap, procedures, userFunctions);
             }
             catch { }
-            return BuildCacheEntry(metadataProvider, tables, columnMap, foreignKeyMap);
+            return BuildCacheEntry(metadataProvider, tables, columnMap, foreignKeyMap, procedures, userFunctions);
         }
 
         private static string MakeTableKey(string schema, string tableName) =>
@@ -100,12 +120,15 @@ namespace SsmsAutocompletion {
         private static CacheEntry BuildCacheEntry(
             IMetadataProvider metadataProvider, List<TableInfo> tables,
             Dictionary<string, List<ColumnInfo>> columnMap,
-            Dictionary<string, List<ForeignKeyInfo>> foreignKeyMap) {
+            Dictionary<string, List<ForeignKeyInfo>> foreignKeyMap,
+            List<ProcedureInfo> procedures,
+            List<UserFunctionInfo> userFunctions) {
             var frozenColumns = new Dictionary<string, IReadOnlyList<ColumnInfo>>(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in columnMap) frozenColumns[kv.Key] = kv.Value.AsReadOnly();
             var frozenForeignKeys = new Dictionary<string, IReadOnlyList<ForeignKeyInfo>>(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in foreignKeyMap) frozenForeignKeys[kv.Key] = kv.Value.AsReadOnly();
-            return new CacheEntry(metadataProvider, tables.AsReadOnly(), frozenColumns, frozenForeignKeys);
+            return new CacheEntry(metadataProvider, tables.AsReadOnly(), frozenColumns, frozenForeignKeys,
+                procedures.AsReadOnly(), userFunctions.AsReadOnly());
         }
 
         private sealed class CacheEntry {
@@ -113,6 +136,8 @@ namespace SsmsAutocompletion {
             public readonly IReadOnlyList<TableInfo> Tables;
             public readonly IReadOnlyDictionary<string, IReadOnlyList<ColumnInfo>> Columns;
             public readonly IReadOnlyDictionary<string, IReadOnlyList<ForeignKeyInfo>> ForeignKeys;
+            public readonly IReadOnlyList<ProcedureInfo>    Procedures;
+            public readonly IReadOnlyList<UserFunctionInfo> UserFunctions;
             private readonly DateTime _loadedAt;
 
             public bool IsExpired => DateTime.UtcNow - _loadedAt > Ttl;
@@ -121,11 +146,15 @@ namespace SsmsAutocompletion {
                 IMetadataProvider metadataProvider,
                 IReadOnlyList<TableInfo> tables,
                 IReadOnlyDictionary<string, IReadOnlyList<ColumnInfo>> columns,
-                IReadOnlyDictionary<string, IReadOnlyList<ForeignKeyInfo>> foreignKeys) {
+                IReadOnlyDictionary<string, IReadOnlyList<ForeignKeyInfo>> foreignKeys,
+                IReadOnlyList<ProcedureInfo> procedures,
+                IReadOnlyList<UserFunctionInfo> userFunctions) {
                 MetadataProvider = metadataProvider;
                 Tables           = tables;
                 Columns          = columns;
                 ForeignKeys      = foreignKeys;
+                Procedures       = procedures;
+                UserFunctions    = userFunctions;
                 _loadedAt        = DateTime.UtcNow;
             }
         }

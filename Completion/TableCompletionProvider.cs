@@ -16,8 +16,11 @@ namespace SsmsAutocompletion {
                 return Array.Empty<CompletionItem>();
             var tables = _databaseMetadata.GetTables(request.ConnectionKey);
             var items  = new List<CompletionItem>(tables.Count);
-            foreach (var table in tables)
-                items.Add(new CompletionItem(table.ToString(), table.ToString() + " ", "Table", CompletionItemKind.Table));
+            foreach (var table in tables) {
+                var kind        = table.ObjectType == SqlObjectType.View ? CompletionItemKind.View  : CompletionItemKind.Table;
+                var description = table.ObjectType == SqlObjectType.View ? "View"                   : "Table";
+                items.Add(new CompletionItem(table.ToString(), table.ToString() + " ", description, kind));
+            }
             return items.AsReadOnly();
         }
     }

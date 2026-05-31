@@ -3,6 +3,9 @@ namespace SsmsAutocompletion {
     internal enum CompletionItemKind {
         Keyword,
         Table,
+        View,
+        StoredProcedure,
+        UserDefinedFunction,
         Column,
         Join,
         Alias,

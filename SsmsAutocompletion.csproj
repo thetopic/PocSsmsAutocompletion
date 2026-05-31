@@ -57,6 +57,9 @@
     <Compile Include="Models\ColumnInfo.cs" />
     <Compile Include="Models\ForeignKeyInfo.cs" />
     <Compile Include="Models\ConnectionKey.cs" />
+    <Compile Include="Models\ParameterInfo.cs" />
+    <Compile Include="Models\ProcedureInfo.cs" />
+    <Compile Include="Models\UserFunctionInfo.cs" />
     <Compile Include="Connection\IConnectionInfoProvider.cs" />
     <Compile Include="Connection\SsmsConnectionInfoProvider.cs" />
     <Compile Include="Cache\IDatabaseMetadata.cs" />
@@ -91,6 +94,8 @@
     <Compile Include="Completion\NativeCompletionProvider.cs" />
     <Compile Include="Completion\CompletionRequestBuilder.cs" />
     <Compile Include="Completion\CompletionEngine.cs" />
+    <Compile Include="Completion\StoredProcedureCompletionProvider.cs" />
+    <Compile Include="Completion\UserDefinedFunctionCompletionProvider.cs" />
     <Compile Include="UI\AutoCompletePopup.cs" />
     <Compile Include="Editor\SqlCommandFilter.cs" />
     <Compile Include="Editor\VsTextViewCreationSqlListener.cs" />

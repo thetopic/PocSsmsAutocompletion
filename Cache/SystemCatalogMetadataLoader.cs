@@ -1,24 +1,30 @@
 using Microsoft.SqlServer.Management.Common;
+using System;
 using System.Collections.Generic;
 using System.Data;
 
 namespace SsmsAutocompletion {
 
-    // Loads metadata by querying SQL Server system catalog views (sys.tables, sys.columns,
-    // sys.foreign_keys). Three round-trips regardless of object count — much faster than
-    // PrefetchObjects on large databases.
+    // Loads metadata by querying SQL Server system catalog views (sys.tables, sys.views,
+    // sys.columns, sys.foreign_keys). Four round-trips regardless of object count — much
+    // faster than PrefetchObjects on large databases.
     internal sealed class SystemCatalogMetadataLoader : IMetadataLoader {
 
         public void Load(
             ServerConnection connection,
             List<TableInfo> tables,
             Dictionary<string, List<ColumnInfo>> columnMap,
-            Dictionary<string, List<ForeignKeyInfo>> foreignKeyMap) {
+            Dictionary<string, List<ForeignKeyInfo>> foreignKeyMap,
+            List<ProcedureInfo> procedures,
+            List<UserFunctionInfo> userFunctions) {
 
             var db = EscapeName(connection.DatabaseName);
             LoadTables(connection, db, tables, columnMap);
+            LoadViews(connection, db, tables, columnMap);
             LoadColumns(connection, db, columnMap);
             LoadForeignKeys(connection, db, foreignKeyMap);
+            LoadProcedures(connection, db, procedures);
+            LoadUserDefinedFunctions(connection, db, userFunctions);
         }
 
         private static void LoadTables(
@@ -41,21 +47,42 @@ namespace SsmsAutocompletion {
             }
         }
 
+        private static void LoadViews(
+            ServerConnection connection, string db,
+            List<TableInfo> tables,
+            Dictionary<string, List<ColumnInfo>> columnMap) {
+
+            var ds = connection.ExecuteWithResults($@"
+                SELECT s.name AS SchemaName, v.name AS ViewName
+                FROM {db}.sys.views   v
+                JOIN {db}.sys.schemas s ON v.schema_id = s.schema_id
+                WHERE v.is_ms_shipped = 0
+                ORDER BY s.name, v.name");
+
+            foreach (DataRow row in ds.Tables[0].Rows) {
+                var schema = (string)row["SchemaName"];
+                var view   = (string)row["ViewName"];
+                tables.Add(new TableInfo(schema, view, SqlObjectType.View));
+                columnMap[MakeKey(schema, view)] = new List<ColumnInfo>();
+            }
+        }
+
         private static void LoadColumns(
             ServerConnection connection, string db,
             Dictionary<string, List<ColumnInfo>> columnMap) {
 
             var ds = connection.ExecuteWithResults($@"
                 SELECT s.name  AS SchemaName,
-                       t.name  AS TableName,
+                       o.name  AS TableName,
                        c.name  AS ColumnName,
                        tp.name AS TypeName
                 FROM {db}.sys.columns  c
-                JOIN {db}.sys.tables   t  ON c.object_id     = t.object_id
-                JOIN {db}.sys.schemas  s  ON t.schema_id     = s.schema_id
-                JOIN {db}.sys.types    tp ON c.user_type_id  = tp.user_type_id
-                WHERE t.is_ms_shipped = 0
-                ORDER BY s.name, t.name, c.column_id");
+                JOIN {db}.sys.objects  o  ON c.object_id    = o.object_id
+                JOIN {db}.sys.schemas  s  ON o.schema_id    = s.schema_id
+                JOIN {db}.sys.types    tp ON c.user_type_id = tp.user_type_id
+                WHERE o.type IN ('U', 'V')
+                  AND o.is_ms_shipped = 0
+                ORDER BY s.name, o.name, c.column_id");
 
             foreach (DataRow row in ds.Tables[0].Rows) {
                 var key = MakeKey((string)row["SchemaName"], (string)row["TableName"]);
@@ -115,6 +142,46 @@ namespace SsmsAutocompletion {
             }
         }
 
+        private static void LoadProcedures(
+            ServerConnection connection, string db,
+            List<ProcedureInfo> procedures) {
+
+            var ds = connection.ExecuteWithResults($@"
+                SELECT s.name  AS SchemaName,
+                       p.name  AS ProcedureName,
+                       pr.name AS ParameterName,
+                       tp.name AS TypeName,
+                       pr.is_output         AS IsOutput,
+                       pr.has_default_value AS HasDefault
+                FROM {db}.sys.procedures p
+                JOIN {db}.sys.schemas    s  ON p.schema_id     = s.schema_id
+                LEFT JOIN {db}.sys.parameters pr ON p.object_id    = pr.object_id
+                                               AND pr.parameter_id > 0
+                LEFT JOIN {db}.sys.types      tp ON pr.user_type_id = tp.user_type_id
+                WHERE p.is_ms_shipped = 0
+                ORDER BY s.name, p.name, pr.parameter_id");
+
+            var acc = new Dictionary<string, ProcAccumulator>();
+            foreach (DataRow row in ds.Tables[0].Rows) {
+                var schema = (string)row["SchemaName"];
+                var name   = (string)row["ProcedureName"];
+                var key    = MakeKey(schema, name);
+                if (!acc.TryGetValue(key, out var entry)) {
+                    entry = new ProcAccumulator(schema, name);
+                    acc[key] = entry;
+                }
+                if (row["ParameterName"] != DBNull.Value) {
+                    entry.Parameters.Add(new ParameterInfo(
+                        (string)row["ParameterName"],
+                        (string)row["TypeName"],
+                        (bool)row["IsOutput"],
+                        (bool)row["HasDefault"]));
+                }
+            }
+            foreach (var entry in acc.Values)
+                procedures.Add(new ProcedureInfo(entry.Schema, entry.Name, entry.Parameters.AsReadOnly()));
+        }
+
         private static string MakeKey(string schema, string table) =>
             $"{schema ?? "dbo"}.{table}";
 
@@ -125,6 +192,72 @@ namespace SsmsAutocompletion {
         private static void AddToMap<T>(Dictionary<string, List<T>> map, string key, T value) {
             if (!map.TryGetValue(key, out var list)) { list = new List<T>(); map[key] = list; }
             list.Add(value);
+        }
+
+        private static void LoadUserDefinedFunctions(
+            ServerConnection connection, string db,
+            List<UserFunctionInfo> userFunctions) {
+
+            var ds = connection.ExecuteWithResults($@"
+                SELECT s.name  AS SchemaName,
+                       o.name  AS FunctionName,
+                       o.type  AS FunctionType,
+                       pr.name AS ParameterName,
+                       tp.name AS TypeName,
+                       pr.has_default_value AS HasDefault
+                FROM {db}.sys.objects  o
+                JOIN {db}.sys.schemas  s  ON o.schema_id  = s.schema_id
+                LEFT JOIN {db}.sys.parameters pr ON o.object_id    = pr.object_id
+                                               AND pr.parameter_id > 0
+                LEFT JOIN {db}.sys.types      tp ON pr.user_type_id = tp.user_type_id
+                WHERE o.type IN ('FN', 'TF', 'IF')
+                  AND o.is_ms_shipped = 0
+                ORDER BY s.name, o.name, pr.parameter_id");
+
+            var acc = new Dictionary<string, UdfAccumulator>();
+            foreach (DataRow row in ds.Tables[0].Rows) {
+                var schema = (string)row["SchemaName"];
+                var name   = (string)row["FunctionName"];
+                var key    = MakeKey(schema, name);
+                if (!acc.TryGetValue(key, out var entry)) {
+                    var sqlType  = ((string)row["FunctionType"]).Trim();
+                    var funcType = SqlTypeToFunctionType(sqlType);
+                    entry = new UdfAccumulator(schema, name, funcType);
+                    acc[key] = entry;
+                }
+                if (row["ParameterName"] != DBNull.Value) {
+                    entry.Parameters.Add(new ParameterInfo(
+                        (string)row["ParameterName"],
+                        (string)row["TypeName"],
+                        isOutput: false,
+                        hasDefault: (bool)row["HasDefault"]));
+                }
+            }
+            foreach (var entry in acc.Values)
+                userFunctions.Add(new UserFunctionInfo(
+                    entry.Schema, entry.Name, entry.FunctionType,
+                    entry.Parameters.AsReadOnly()));
+        }
+
+        private static UserFunctionType SqlTypeToFunctionType(string sqlType) {
+            if (sqlType == "TF") return UserFunctionType.TableValued;
+            if (sqlType == "IF") return UserFunctionType.InlineTableValued;
+            return UserFunctionType.Scalar;
+        }
+
+        private sealed class UdfAccumulator {
+            public readonly string Schema, Name;
+            public readonly UserFunctionType FunctionType;
+            public readonly List<ParameterInfo> Parameters = new List<ParameterInfo>();
+            public UdfAccumulator(string schema, string name, UserFunctionType funcType) {
+                Schema = schema; Name = name; FunctionType = funcType;
+            }
+        }
+
+        private sealed class ProcAccumulator {
+            public readonly string Schema, Name;
+            public readonly List<ParameterInfo> Parameters = new List<ParameterInfo>();
+            public ProcAccumulator(string schema, string name) { Schema = schema; Name = name; }
         }
 
         private sealed class FkAccumulator {

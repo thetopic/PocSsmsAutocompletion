@@ -255,6 +255,54 @@ namespace SsmsAutocompletion.Tests {
         }
 
         // ══════════════════════════════════════════════════════════════════════
+        // IsAfterExecKeyword  (uses real TokenManager)
+        // ══════════════════════════════════════════════════════════════════════
+
+        [TestMethod]
+        public void IsAfterExecKeyword_AfterExec_True() {
+            string sql = "EXEC ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsTrue(Detector.IsAfterExecKeyword(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsAfterExecKeyword_AfterExecute_True() {
+            string sql = "EXECUTE ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsTrue(Detector.IsAfterExecKeyword(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsAfterExecKeyword_PartialProcName_True() {
+            string sql = "EXEC GetCust";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsTrue(Detector.IsAfterExecKeyword(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsAfterExecKeyword_AfterSelect_False() {
+            string sql = "SELECT ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsFalse(Detector.IsAfterExecKeyword(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsAfterExecKeyword_AfterFrom_False() {
+            string sql = "SELECT * FROM ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsFalse(Detector.IsAfterExecKeyword(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsAfterExecKeyword_NullParseResult_False() =>
+            Assert.IsFalse(Detector.IsAfterExecKeyword(null, 1, 1));
+
+        // ══════════════════════════════════════════════════════════════════════
         // GetLineColumn  (via snapshot)
         // ══════════════════════════════════════════════════════════════════════
 

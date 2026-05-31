@@ -13,12 +13,25 @@ namespace SsmsAutocompletion {
             ServerConnection connection,
             List<TableInfo> tables,
             Dictionary<string, List<ColumnInfo>> columnMap,
-            Dictionary<string, List<ForeignKeyInfo>> foreignKeyMap) {
+            Dictionary<string, List<ForeignKeyInfo>> foreignKeyMap,
+            List<ProcedureInfo> procedures,
+            List<UserFunctionInfo> userFunctions) {
 
             var server = new Server(connection);
 
             server.SetDefaultInitFields(typeof(Table),
                 nameof(Table.Schema), nameof(Table.Name), nameof(Table.IsSystemObject));
+            server.SetDefaultInitFields(typeof(View),
+                nameof(View.Schema), nameof(View.Name), nameof(View.IsSystemObject));
+            server.SetDefaultInitFields(typeof(UserDefinedFunction),
+                nameof(UserDefinedFunction.Schema), nameof(UserDefinedFunction.Name),
+                nameof(UserDefinedFunction.IsSystemObject),
+                nameof(UserDefinedFunction.FunctionType));
+            server.SetDefaultInitFields(typeof(UserDefinedFunctionParameter), true);
+            server.SetDefaultInitFields(typeof(StoredProcedure),
+                nameof(StoredProcedure.Schema), nameof(StoredProcedure.Name),
+                nameof(StoredProcedure.IsSystemObject));
+            server.SetDefaultInitFields(typeof(StoredProcedureParameter), true);
             server.SetDefaultInitFields(typeof(Column), true);
             server.SetDefaultInitFields(typeof(ForeignKey),
                 nameof(ForeignKey.Name),
@@ -32,9 +45,16 @@ namespace SsmsAutocompletion {
             if (db == null) return;
 
             try { db.PrefetchObjects(typeof(Table));            } catch { }
+            try { db.PrefetchObjects(typeof(View));             } catch { }
+            try { db.PrefetchObjects(typeof(UserDefinedFunction)); } catch { }
+            try { db.PrefetchObjects(typeof(StoredProcedure)); } catch { }
             try { db.PrefetchObjects(typeof(Column));           } catch { }
             try { db.PrefetchObjects(typeof(ForeignKey));       } catch { }
             try { db.PrefetchObjects(typeof(ForeignKeyColumn)); } catch { }
+
+            LoadUserDefinedFunctions(db, userFunctions);
+            LoadProcedures(db, procedures);
+            LoadViews(db, tables, columnMap);
 
             foreach (Table table in db.Tables) {
                 if (table.IsSystemObject) continue;
@@ -58,6 +78,62 @@ namespace SsmsAutocompletion {
                     AddToMap(foreignKeyMap, MakeKey(table.Schema, table.Name), fkInfo);
                     AddToMap(foreignKeyMap, MakeKey(fk.ReferencedTableSchema, fk.ReferencedTable), fkInfo);
                 }
+            }
+        }
+
+        private static void LoadUserDefinedFunctions(
+            Database db,
+            List<UserFunctionInfo> userFunctions) {
+
+            foreach (UserDefinedFunction udf in db.UserDefinedFunctions) {
+                if (udf.IsSystemObject) continue;
+                UserFunctionType funcType;
+                switch (udf.FunctionType) {
+                    case UserDefinedFunctionType.Table:  funcType = UserFunctionType.TableValued;       break;
+                    case UserDefinedFunctionType.Inline: funcType = UserFunctionType.InlineTableValued; break;
+                    default:                             funcType = UserFunctionType.Scalar;            break;
+                }
+                var paramList = new List<ParameterInfo>();
+                foreach (UserDefinedFunctionParameter param in udf.Parameters) {
+                    paramList.Add(new ParameterInfo(
+                        param.Name, param.DataType.Name,
+                        isOutput: false,
+                        hasDefault: !string.IsNullOrEmpty(param.DefaultValue)));
+                }
+                userFunctions.Add(new UserFunctionInfo(udf.Schema, udf.Name, funcType, paramList.AsReadOnly()));
+            }
+        }
+
+        private static void LoadProcedures(
+            Database db,
+            List<ProcedureInfo> procedures) {
+
+            foreach (StoredProcedure sp in db.StoredProcedures) {
+                if (sp.IsSystemObject) continue;
+                var paramList = new List<ParameterInfo>();
+                foreach (StoredProcedureParameter param in sp.Parameters) {
+                    paramList.Add(new ParameterInfo(
+                        param.Name,
+                        param.DataType.Name,
+                        param.IsOutputParameter,
+                        !string.IsNullOrEmpty(param.DefaultValue)));
+                }
+                procedures.Add(new ProcedureInfo(sp.Schema, sp.Name, paramList.AsReadOnly()));
+            }
+        }
+
+        private static void LoadViews(
+            Database db,
+            List<TableInfo> tables,
+            Dictionary<string, List<ColumnInfo>> columnMap) {
+
+            foreach (View view in db.Views) {
+                if (view.IsSystemObject) continue;
+                tables.Add(new TableInfo(view.Schema, view.Name, SqlObjectType.View));
+                var colList = new List<ColumnInfo>();
+                foreach (Column col in view.Columns)
+                    colList.Add(new ColumnInfo(col.Name, col.DataType.Name));
+                columnMap[MakeKey(view.Schema, view.Name)] = colList;
             }
         }
 

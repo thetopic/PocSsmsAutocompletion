@@ -1,12 +1,16 @@
 namespace SsmsAutocompletion {
 
-    internal sealed class TableInfo {
-        public string Schema    { get; }
-        public string TableName { get; }
+    internal enum SqlObjectType { Table, View }
 
-        public TableInfo(string schema, string tableName) {
-            Schema    = schema;
-            TableName = tableName;
+    internal sealed class TableInfo {
+        public string        Schema     { get; }
+        public string        TableName  { get; }
+        public SqlObjectType ObjectType { get; }
+
+        public TableInfo(string schema, string tableName, SqlObjectType objectType = SqlObjectType.Table) {
+            Schema     = schema;
+            TableName  = tableName;
+            ObjectType = objectType;
         }
 
         public override string ToString() =>

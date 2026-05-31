@@ -8,6 +8,8 @@ namespace SsmsAutocompletion {
             ServerConnection connection,
             List<TableInfo> tables,
             Dictionary<string, List<ColumnInfo>> columnMap,
-            Dictionary<string, List<ForeignKeyInfo>> foreignKeyMap);
+            Dictionary<string, List<ForeignKeyInfo>> foreignKeyMap,
+            List<ProcedureInfo> procedures,
+            List<UserFunctionInfo> userFunctions);
     }
 }

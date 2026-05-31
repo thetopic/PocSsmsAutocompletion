@@ -55,5 +55,32 @@ namespace SsmsAutocompletion.Tests {
         public void IsAfterFromKeyword_SelectOnly_False() {
             Assert.IsFalse(Build("SELECT ").IsAfterFromKeyword);
         }
+
+        // ── IsAfterExecKeyword ─────────────────────────────────────────────────
+
+        [TestMethod]
+        public void IsAfterExecKeyword_AfterExecSpace_True() {
+            Assert.IsTrue(Build("EXEC ").IsAfterExecKeyword);
+        }
+
+        [TestMethod]
+        public void IsAfterExecKeyword_AfterExecuteSpace_True() {
+            Assert.IsTrue(Build("EXECUTE ").IsAfterExecKeyword);
+        }
+
+        [TestMethod]
+        public void IsAfterExecKeyword_PartialProcName_True() {
+            Assert.IsTrue(Build("EXEC GetCust").IsAfterExecKeyword);
+        }
+
+        [TestMethod]
+        public void IsAfterExecKeyword_AfterSelect_False() {
+            Assert.IsFalse(Build("SELECT ").IsAfterExecKeyword);
+        }
+
+        [TestMethod]
+        public void IsAfterExecKeyword_AfterFrom_False() {
+            Assert.IsFalse(Build("SELECT * FROM ").IsAfterExecKeyword);
+        }
     }
 }

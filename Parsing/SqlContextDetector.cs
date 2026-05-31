@@ -111,6 +111,10 @@ namespace SsmsAutocompletion {
             catch { return (false, null); }
         }
 
+        public bool IsAfterExecKeyword(ParseResult parseResult, int line, int column) =>
+            IsAfterKeyword(parseResult, line, column, "EXEC") ||
+            IsAfterKeyword(parseResult, line, column, "EXECUTE");
+
         private static (bool, string) DetectAliasContextAfterAs(
             TokenManager tokenManager, string prev1Text, int prev2Index) {
             if (!string.Equals(prev1Text, "AS", StringComparison.OrdinalIgnoreCase))

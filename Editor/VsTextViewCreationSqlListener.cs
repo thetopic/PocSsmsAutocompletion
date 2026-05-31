@@ -85,6 +85,8 @@ namespace SsmsAutocompletion {
                 new CteCompletionProvider(CteExtractor),
                 new CteColumnCompletionProvider(CteExtractor, CteColumnExtractor, AliasExtractor),
                 new TableCompletionProvider(DatabaseMetadata),
+                new StoredProcedureCompletionProvider(DatabaseMetadata),
+                new UserDefinedFunctionCompletionProvider(DatabaseMetadata),
                 new FunctionCompletionProvider(),
                 new KeywordCompletionProvider(),
             }.AsReadOnly();

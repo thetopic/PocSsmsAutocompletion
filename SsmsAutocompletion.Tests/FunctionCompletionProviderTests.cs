@@ -7,7 +7,10 @@ namespace SsmsAutocompletion.Tests {
 
         private static readonly FunctionCompletionProvider Provider = new FunctionCompletionProvider();
 
-        private static CompletionRequest Make(bool isDotContext = false, bool isAfterFromKeyword = false) =>
+        private static CompletionRequest Make(
+            bool isDotContext       = false,
+            bool isAfterFromKeyword = false,
+            bool isAfterExecKeyword = false) =>
             new CompletionRequest(
                 sql: "SELECT", caretPosition: 0, line: 1, column: 1,
                 connectionKey: null, parseResult: null, metadataProvider: null,
@@ -15,7 +18,8 @@ namespace SsmsAutocompletion.Tests {
                 isAfterFromKeyword: isAfterFromKeyword,
                 isJoinOnContext: false, isAfterJoinKeyword: false,
                 isWhereContext: false, isAfterTableInFromJoin: false,
-                tableNameBeforeCursor: null, snapshot: null);
+                tableNameBeforeCursor: null, snapshot: null,
+                isAfterExecKeyword: isAfterExecKeyword);
 
         [TestMethod]
         public void NormalContext_ReturnsFunctions() {
@@ -29,8 +33,12 @@ namespace SsmsAutocompletion.Tests {
 
         [TestMethod]
         public void AfterFromContext_ReturnsEmpty() {
-            // Functions like COALESCE, CAST must not appear in a FROM clause.
             Assert.AreEqual(0, Provider.GetCompletions(Make(isAfterFromKeyword: true)).Count);
+        }
+
+        [TestMethod]
+        public void AfterExecContext_ReturnsEmpty() {
+            Assert.AreEqual(0, Provider.GetCompletions(Make(isAfterExecKeyword: true)).Count);
         }
     }
 }

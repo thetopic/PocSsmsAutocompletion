@@ -34,6 +34,7 @@ namespace SsmsAutocompletion {
             _connectionInfoProvider = connectionInfoProvider;
             _databaseMetadata       = databaseMetadata;
             _popup                  = new AutoCompletePopup(textView);
+            _popup.Committed       += OnItemCommitted;
         }
 
         public int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
@@ -58,9 +59,7 @@ namespace SsmsAutocompletion {
                 case VSConstants.VSStd2KCmdID.RETURN:
                 case VSConstants.VSStd2KCmdID.TAB:
                     if (!_popup.IsVisible) return VSConstants.E_FAIL;
-                    var committed = _popup.Commit();
-                    if (committed?.Description == "Table" || committed?.Description == "View")
-                        TriggerCompletionFromExplicitCommand();
+                    _popup.Commit();
                     return VSConstants.S_OK;
                 case VSConstants.VSStd2KCmdID.CANCEL:
                     if (!_popup.IsVisible) return VSConstants.E_FAIL;
@@ -81,6 +80,11 @@ namespace SsmsAutocompletion {
                 default:
                     return VSConstants.E_FAIL;
             }
+        }
+
+        private void OnItemCommitted(CompletionItem committed) {
+            if (committed?.Description == "Table" || committed?.Description == "View")
+                TriggerCompletionFromExplicitCommand();
         }
 
         private void TriggerCompletionFromExplicitCommand() {

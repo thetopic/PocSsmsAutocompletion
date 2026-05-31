@@ -23,9 +23,12 @@ namespace SsmsAutocompletion {
 
         public bool IsVisible => _popup?.IsOpen == true;
 
+        public event Action<CompletionItem> Committed;
+
         public AutoCompletePopup(IWpfTextView textView) {
             _textView = textView;
             _listBox  = BuildListBox();
+            _listBox.MouseDoubleClick += (sender, args) => Commit();
             _popup    = BuildPopup(textView);
             _popup.Closed += (sender, args) => _allItems.Clear();
             _textView.VisualElement.PreviewMouseDown += (sender, args) => Dismiss();
@@ -55,13 +58,17 @@ namespace SsmsAutocompletion {
         }
 
         public void MoveDown() {
-            if (_listBox.SelectedIndex < _listBox.Items.Count - 1)
+            if (_listBox.SelectedIndex < _listBox.Items.Count - 1) {
                 _listBox.SelectedIndex++;
+                _listBox.ScrollIntoView(_listBox.SelectedItem);
+            }
         }
 
         public void MoveUp() {
-            if (_listBox.SelectedIndex > 0)
+            if (_listBox.SelectedIndex > 0) {
                 _listBox.SelectedIndex--;
+                _listBox.ScrollIntoView(_listBox.SelectedItem);
+            }
         }
 
         public CompletionItem Commit() {
@@ -74,6 +81,7 @@ namespace SsmsAutocompletion {
                 _textView.TextBuffer.Replace(span, selectedItem.InsertText);
             }
             catch { }
+            Committed?.Invoke(selectedItem);
             return selectedItem;
         }
 

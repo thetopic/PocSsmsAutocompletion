@@ -9,8 +9,10 @@ namespace SsmsAutocompletion.Tests {
     public class TableCompletionProviderTests {
 
         private static CompletionRequest Make(
-            bool isDotContext       = false,
-            bool isAfterFromKeyword = false,
+            bool isDotContext        = false,
+            bool isAfterFromKeyword  = true,
+            bool isAfterJoinKeyword  = false,
+            bool isAfterExecKeyword  = false,
             ConnectionKey connectionKey = null) =>
             new CompletionRequest(
                 sql: "SELECT * FROM ", caretPosition: 14, line: 1, column: 15,
@@ -18,9 +20,10 @@ namespace SsmsAutocompletion.Tests {
                 parseResult: null, metadataProvider: null,
                 isDotContext: isDotContext, qualifier: null,
                 isAfterFromKeyword: isAfterFromKeyword,
-                isJoinOnContext: false, isAfterJoinKeyword: false,
+                isJoinOnContext: false, isAfterJoinKeyword: isAfterJoinKeyword,
                 isWhereContext: false, isAfterTableInFromJoin: false,
-                tableNameBeforeCursor: null, snapshot: null);
+                tableNameBeforeCursor: null, snapshot: null,
+                isAfterExecKeyword: isAfterExecKeyword);
 
         private static IDatabaseMetadata MetaWith(params TableInfo[] tables) {
             var mock = new Mock<IDatabaseMetadata>();
@@ -35,6 +38,24 @@ namespace SsmsAutocompletion.Tests {
         public void DotContext_ReturnsEmpty() {
             var p = new TableCompletionProvider(MetaWith(new TableInfo("dbo", "Orders")));
             Assert.AreEqual(0, p.GetCompletions(Make(isDotContext: true)).Count);
+        }
+
+        [TestMethod]
+        public void AfterExecKeyword_ReturnsEmpty() {
+            var p = new TableCompletionProvider(MetaWith(new TableInfo("dbo", "Orders")));
+            Assert.AreEqual(0, p.GetCompletions(Make(isAfterExecKeyword: true)).Count);
+        }
+
+        [TestMethod]
+        public void NoFromOrJoin_ReturnsEmpty() {
+            var p = new TableCompletionProvider(MetaWith(new TableInfo("dbo", "Orders")));
+            Assert.AreEqual(0, p.GetCompletions(Make(isAfterFromKeyword: false, isAfterJoinKeyword: false)).Count);
+        }
+
+        [TestMethod]
+        public void AfterJoinKeyword_ReturnsTables() {
+            var p = new TableCompletionProvider(MetaWith(new TableInfo("dbo", "Orders")));
+            Assert.AreEqual(1, p.GetCompletions(Make(isAfterFromKeyword: false, isAfterJoinKeyword: true)).Count);
         }
 
         [TestMethod]

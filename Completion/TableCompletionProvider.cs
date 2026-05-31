@@ -11,7 +11,10 @@ namespace SsmsAutocompletion {
         }
 
         public IReadOnlyList<CompletionItem> GetCompletions(CompletionRequest request) {
-            if (request.IsDotContext) return Array.Empty<CompletionItem>();
+            if (request.IsDotContext)        return Array.Empty<CompletionItem>();
+            if (request.IsAfterExecKeyword)  return Array.Empty<CompletionItem>();
+            if (!request.IsAfterFromKeyword && !request.IsAfterJoinKeyword)
+                return Array.Empty<CompletionItem>();
             if (request.ConnectionKey == null || request.ConnectionKey.IsEmpty)
                 return Array.Empty<CompletionItem>();
             var tables = _databaseMetadata.GetTables(request.ConnectionKey);

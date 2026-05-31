@@ -9,7 +9,8 @@ namespace SsmsAutocompletion {
             "SELECT","FROM","WHERE","JOIN","INNER","LEFT","RIGHT","OUTER","CROSS","FULL",
             "ON","AS","AND","OR","NOT","IN","IS","NULL","LIKE","BETWEEN","ORDER","GROUP",
             "BY","HAVING","UNION","ALL","DISTINCT","TOP","INTO","VALUES","INSERT","UPDATE",
-            "DELETE","SET","TABLE","WITH","EXISTS","CASE","WHEN","THEN","ELSE","END"
+            "DELETE","SET","TABLE","WITH","EXISTS","CASE","WHEN","THEN","ELSE","END",
+            "EXEC","EXECUTE"
         }.AsReadOnly();
 
         public IReadOnlyList<CompletionItem> GetCompletions(CompletionRequest request) {

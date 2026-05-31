@@ -31,7 +31,9 @@ namespace SsmsAutocompletion {
             bool isAfterJoinKeyword = _contextDetector.IsAfterKeyword(parseResult, line, column, "JOIN");
             bool isWhereContext     = _contextDetector.IsInsideWhereClause(parseResult, line, column);
             var (isAfterTable, tableNameBefore) = _contextDetector.DetectAliasContext(parseResult, line, column);
-            bool isAfterExecKeyword = _contextDetector.IsAfterExecKeyword(parseResult, line, column);
+            string wordBefore       = _contextDetector.GetWordBefore(snapshot, caretPosition - currentWord.Length);
+            bool isAfterExecKeyword = string.Equals(wordBefore, "EXEC",    System.StringComparison.OrdinalIgnoreCase)
+                                   || string.Equals(wordBefore, "EXECUTE", System.StringComparison.OrdinalIgnoreCase);
             return new CompletionRequest(
                 sql, caretPosition, line, column,
                 connectionKey, parseResult, metadataProvider,

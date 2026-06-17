@@ -16,7 +16,8 @@ namespace SsmsAutocompletion {
             Dictionary<string, List<ColumnInfo>> columnMap,
             Dictionary<string, List<ForeignKeyInfo>> foreignKeyMap,
             List<ProcedureInfo> procedures,
-            List<UserFunctionInfo> userFunctions) {
+            List<UserFunctionInfo> userFunctions,
+            List<string> schemas) {
 
             var db = EscapeName(connection.DatabaseName);
             LoadTables(connection, db, tables, columnMap);
@@ -25,6 +26,19 @@ namespace SsmsAutocompletion {
             LoadForeignKeys(connection, db, foreignKeyMap);
             LoadProcedures(connection, db, procedures);
             LoadUserDefinedFunctions(connection, db, userFunctions);
+            LoadSchemas(connection, db, schemas);
+        }
+
+        private static void LoadSchemas(
+            ServerConnection connection, string db,
+            List<string> schemas) {
+            try {
+                var ds = connection.ExecuteWithResults($@"
+                    SELECT name FROM {db}.sys.schemas WHERE schema_id < 16384 ORDER BY name");
+                foreach (DataRow row in ds.Tables[0].Rows)
+                    schemas.Add((string)row["name"]);
+            }
+            catch { }
         }
 
         private static void LoadTables(

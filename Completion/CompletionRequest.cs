@@ -1,6 +1,7 @@
 using Microsoft.SqlServer.Management.SqlParser.MetadataProvider;
 using Microsoft.SqlServer.Management.SqlParser.Parser;
 using Microsoft.VisualStudio.Text;
+using System.Collections.Generic;
 
 namespace SsmsAutocompletion {
 
@@ -23,30 +24,54 @@ namespace SsmsAutocompletion {
         public ITextSnapshot     Snapshot               { get; }
         public bool              IsAfterExecKeyword     { get; }
 
+        // Stored procedure parameter completion
+        public bool                   IsInsideProcedureCall      { get; }
+        public string                 ProcedureNameBeforeCursor  { get; }
+        public IReadOnlyList<string>  AlreadyProvidedParameters  { get; }
+
+        // INSERT / UPDATE completion
+        public bool   IsInsertColumnList       { get; }
+        public bool   IsUpdateSetClause        { get; }
+        public string InsertUpdateTargetTable  { get; }
+
+        // SELECT list unqualified column completion
+        public bool   IsInSelectList  { get; }
+
         public CompletionRequest(
             string sql, int caretPosition, int line, int column,
             ConnectionKey connectionKey, ParseResult parseResult,
             IMetadataProvider metadataProvider, bool isDotContext, string qualifier,
             bool isAfterFromKeyword, bool isJoinOnContext, bool isAfterJoinKeyword,
             bool isWhereContext, bool isAfterTableInFromJoin, string tableNameBeforeCursor,
-            ITextSnapshot snapshot, bool isAfterExecKeyword = false) {
-            Sql                    = sql;
-            CaretPosition          = caretPosition;
-            Line                   = line;
-            Column                 = column;
-            ConnectionKey          = connectionKey;
-            ParseResult            = parseResult;
-            MetadataProvider       = metadataProvider;
-            IsDotContext           = isDotContext;
-            Qualifier              = qualifier;
-            IsAfterFromKeyword     = isAfterFromKeyword;
-            IsJoinOnContext        = isJoinOnContext;
-            IsAfterJoinKeyword     = isAfterJoinKeyword;
-            IsWhereContext         = isWhereContext;
-            IsAfterTableInFromJoin = isAfterTableInFromJoin;
-            TableNameBeforeCursor  = tableNameBeforeCursor;
-            Snapshot               = snapshot;
-            IsAfterExecKeyword     = isAfterExecKeyword;
+            ITextSnapshot snapshot, bool isAfterExecKeyword = false,
+            bool isInsideProcedureCall = false, string procedureNameBeforeCursor = null,
+            IReadOnlyList<string> alreadyProvidedParameters = null,
+            bool isInsertColumnList = false, bool isUpdateSetClause = false,
+            string insertUpdateTargetTable = null, bool isInSelectList = false) {
+            Sql                       = sql;
+            CaretPosition             = caretPosition;
+            Line                      = line;
+            Column                    = column;
+            ConnectionKey             = connectionKey;
+            ParseResult               = parseResult;
+            MetadataProvider          = metadataProvider;
+            IsDotContext              = isDotContext;
+            Qualifier                 = qualifier;
+            IsAfterFromKeyword        = isAfterFromKeyword;
+            IsJoinOnContext           = isJoinOnContext;
+            IsAfterJoinKeyword        = isAfterJoinKeyword;
+            IsWhereContext            = isWhereContext;
+            IsAfterTableInFromJoin    = isAfterTableInFromJoin;
+            TableNameBeforeCursor     = tableNameBeforeCursor;
+            Snapshot                  = snapshot;
+            IsAfterExecKeyword        = isAfterExecKeyword;
+            IsInsideProcedureCall     = isInsideProcedureCall;
+            ProcedureNameBeforeCursor = procedureNameBeforeCursor;
+            AlreadyProvidedParameters = alreadyProvidedParameters ?? System.Array.Empty<string>();
+            IsInsertColumnList        = isInsertColumnList;
+            IsUpdateSetClause         = isUpdateSetClause;
+            InsertUpdateTargetTable   = insertUpdateTargetTable;
+            IsInSelectList            = isInSelectList;
         }
     }
 }

@@ -70,13 +70,15 @@ namespace SsmsAutocompletion {
             var engine         = new CompletionEngine(providers, requestBuilder, ContextDetector);
             return new SqlCommandFilter(
                 textView, connectionKey, engine,
-                ContextDetector, ConnectionInfoProvider, DatabaseMetadata);
+                ContextDetector, ConnectionInfoProvider, DatabaseMetadata,
+                SqlParser, AliasExtractor);
         }
 
         private static IReadOnlyList<ICompletionProvider> BuildProviders() =>
             new List<ICompletionProvider> {
                 new NativeCompletionProvider(),
                 new FkJoinTableCompletionProvider(DatabaseMetadata, AliasExtractor),
+                new SchemaCompletionProvider(DatabaseMetadata, AliasExtractor, CteExtractor),
                 new InlineJoinCompletionProvider(DatabaseMetadata, AliasExtractor),
                 new FkJoinCompletionProvider(DatabaseMetadata, AliasExtractor, ContextDetector),
                 new SimilarColumnJoinCompletionProvider(DatabaseMetadata, AliasExtractor),
@@ -84,8 +86,12 @@ namespace SsmsAutocompletion {
                 new ColumnCompletionProvider(DatabaseMetadata, AliasExtractor),
                 new CteCompletionProvider(CteExtractor),
                 new CteColumnCompletionProvider(CteExtractor, CteColumnExtractor, AliasExtractor),
+                new UnqualifiedColumnCompletionProvider(DatabaseMetadata, AliasExtractor),
                 new TableCompletionProvider(DatabaseMetadata),
                 new StoredProcedureCompletionProvider(DatabaseMetadata),
+                new StoredProcedureParameterCompletionProvider(DatabaseMetadata),
+                new InsertColumnCompletionProvider(DatabaseMetadata),
+                new UpdateSetCompletionProvider(DatabaseMetadata, AliasExtractor),
                 new UserDefinedFunctionCompletionProvider(DatabaseMetadata),
                 new FunctionCompletionProvider(),
                 new KeywordCompletionProvider(),

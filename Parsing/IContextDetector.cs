@@ -1,5 +1,6 @@
 using Microsoft.SqlServer.Management.SqlParser.Parser;
 using Microsoft.VisualStudio.Text;
+using System.Collections.Generic;
 
 namespace SsmsAutocompletion {
 
@@ -14,5 +15,18 @@ namespace SsmsAutocompletion {
         string GetWordBefore(ITextSnapshot snapshot, int caretPosition);
         (bool isAliasContext, string tableNameBefore) DetectAliasContext(ParseResult parseResult, int line, int column);
         bool IsAfterExecKeyword(ParseResult parseResult, int line, int column);
+
+        // Procedure call context
+        (bool isInside, string procedureName, IReadOnlyList<string> alreadyProvided)
+            GetProcedureCallContext(ITextSnapshot snapshot, int caretPosition);
+
+        // INSERT column list context
+        (bool isInside, string targetTable) DetectInsertContext(ParseResult parseResult, int line, int column);
+
+        // UPDATE SET context
+        (bool isInside, string targetTable) DetectUpdateSetContext(ParseResult parseResult, int line, int column);
+
+        // Nearest clause keyword (e.g. SELECT, FROM, WHERE) — text-based backward scan
+        string GetNearestClauseKeyword(ITextSnapshot snapshot, int caretPosition);
     }
 }

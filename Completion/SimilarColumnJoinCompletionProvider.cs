@@ -52,17 +52,50 @@ namespace SsmsAutocompletion {
             string aliasA, TableInfo tableA,
             string aliasB, TableInfo tableB,
             List<CompletionItem> items) {
-            var columnsA = _databaseMetadata.GetColumns(connectionKey, tableA.Schema, tableA.TableName);
-            var columnsB = _databaseMetadata.GetColumns(connectionKey, tableB.Schema, tableB.TableName);
+            var columnsA   = _databaseMetadata.GetColumns(connectionKey, tableA.Schema, tableA.TableName);
+            var columnsB   = _databaseMetadata.GetColumns(connectionKey, tableB.Schema, tableB.TableName);
+            var fkCovered  = BuildFkCoveredPairs(connectionKey, tableA, tableB);
 
             foreach (var columnA in columnsA) {
                 foreach (var columnB in columnsB) {
                     if (!AreSimilar(columnA.ColumnName, columnB.ColumnName)) continue;
+                    if (fkCovered.Contains(MakePairKey(columnA.ColumnName, columnB.ColumnName))) continue;
                     string condition = $"{aliasA}.{columnA.ColumnName} = {aliasB}.{columnB.ColumnName}";
-                    items.Add(new CompletionItem(condition, condition, "Colonnes similaires", CompletionItemKind.Join));
+                    items.Add(new CompletionItem(condition, condition, "Colonnes similaires", CompletionItemKind.Join, rank: 1));
                 }
             }
         }
+
+        private HashSet<string> BuildFkCoveredPairs(
+            ConnectionKey connectionKey, TableInfo tableA, TableInfo tableB) {
+            var covered = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // GetForeignKeys returns all FKs involving the table (both directions)
+            var fks = _databaseMetadata.GetForeignKeys(connectionKey, tableA.Schema, tableA.TableName);
+            foreach (var fk in fks) {
+                bool aIsFk = string.Equals(fk.FkTable, tableA.TableName, StringComparison.OrdinalIgnoreCase)
+                          && string.Equals(fk.FkSchema, tableA.Schema, StringComparison.OrdinalIgnoreCase);
+                bool bIsFk = string.Equals(fk.FkTable, tableB.TableName, StringComparison.OrdinalIgnoreCase)
+                          && string.Equals(fk.FkSchema, tableB.Schema, StringComparison.OrdinalIgnoreCase);
+                bool aIsRef = string.Equals(fk.ReferencedTable, tableA.TableName, StringComparison.OrdinalIgnoreCase)
+                           && string.Equals(fk.ReferencedSchema, tableA.Schema, StringComparison.OrdinalIgnoreCase);
+                bool bIsRef = string.Equals(fk.ReferencedTable, tableB.TableName, StringComparison.OrdinalIgnoreCase)
+                           && string.Equals(fk.ReferencedSchema, tableB.Schema, StringComparison.OrdinalIgnoreCase);
+
+                // A→B: tableA has FK referencing tableB
+                if (aIsFk && bIsRef)
+                    for (int i = 0; i < Math.Min(fk.FkColumns.Count, fk.ReferencedColumns.Count); i++)
+                        covered.Add(MakePairKey(fk.FkColumns[i], fk.ReferencedColumns[i]));
+
+                // B→A: tableB has FK referencing tableA
+                if (bIsFk && aIsRef)
+                    for (int i = 0; i < Math.Min(fk.FkColumns.Count, fk.ReferencedColumns.Count); i++)
+                        covered.Add(MakePairKey(fk.ReferencedColumns[i], fk.FkColumns[i]));
+            }
+            return covered;
+        }
+
+        private static string MakePairKey(string colA, string colB) =>
+            colA.ToLowerInvariant() + "|" + colB.ToLowerInvariant();
 
         /// <summary>
         /// Two column names are considered similar when:

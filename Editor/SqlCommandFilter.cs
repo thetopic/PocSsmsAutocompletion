@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
@@ -16,6 +17,8 @@ namespace SsmsAutocompletion {
         private readonly IContextDetector        _contextDetector;
         private readonly IConnectionInfoProvider _connectionInfoProvider;
         private readonly IDatabaseMetadata       _databaseMetadata;
+        private readonly ISqlParser              _sqlParser;
+        private readonly IAliasExtractor         _aliasExtractor;
         private          ConnectionKey           _connectionKey;
 
         public IOleCommandTarget Next { get; set; }
@@ -26,13 +29,17 @@ namespace SsmsAutocompletion {
             CompletionEngine completionEngine,
             IContextDetector contextDetector,
             IConnectionInfoProvider connectionInfoProvider,
-            IDatabaseMetadata databaseMetadata) {
+            IDatabaseMetadata databaseMetadata,
+            ISqlParser sqlParser,
+            IAliasExtractor aliasExtractor) {
             _textView               = textView;
             _connectionKey          = connectionKey;
             _completionEngine       = completionEngine;
             _contextDetector        = contextDetector;
             _connectionInfoProvider = connectionInfoProvider;
             _databaseMetadata       = databaseMetadata;
+            _sqlParser              = sqlParser;
+            _aliasExtractor         = aliasExtractor;
             _popup                  = new AutoCompletePopup(textView);
             _popup.Committed       += OnItemCommitted;
         }
@@ -83,8 +90,14 @@ namespace SsmsAutocompletion {
         }
 
         private void OnItemCommitted(CompletionItem committed) {
-            if (committed?.Description == "Table" || committed?.Description == "View")
-                TriggerCompletionFromExplicitCommand();
+            if (committed?.Kind != CompletionItemKind.Table && committed?.Kind != CompletionItemKind.View) return;
+            var snapshot    = _textView.TextBuffer.CurrentSnapshot;
+            var parseResult = _sqlParser.Parse(snapshot.GetText());
+            var existing    = new HashSet<string>(_aliasExtractor.Extract(parseResult).Keys, StringComparer.OrdinalIgnoreCase);
+            string alias    = AliasGenerator.Generate(committed.DisplayText, existing);
+            int caretPos    = _textView.Caret.Position.BufferPosition.Position;
+            _textView.TextBuffer.Insert(caretPos, alias + " ");
+            _textView.Caret.MoveTo(new SnapshotPoint(_textView.TextBuffer.CurrentSnapshot, caretPos + alias.Length + 1));
         }
 
         private void TriggerCompletionFromExplicitCommand() {

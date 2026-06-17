@@ -42,6 +42,13 @@
     <Compile Include="..\Completion\InlineJoinCompletionProvider.cs" Link="_src\Completion\InlineJoinCompletionProvider.cs" />
     <Compile Include="..\Completion\TableCompletionProvider.cs" Link="_src\Completion\TableCompletionProvider.cs" />
     <Compile Include="..\Completion\StoredProcedureCompletionProvider.cs" Link="_src\Completion\StoredProcedureCompletionProvider.cs" />
+    <Compile Include="..\Completion\StoredProcedureParameterCompletionProvider.cs" Link="_src\Completion\StoredProcedureParameterCompletionProvider.cs" />
+    <Compile Include="..\Completion\SchemaCompletionProvider.cs" Link="_src\Completion\SchemaCompletionProvider.cs" />
+    <Compile Include="..\Completion\InsertColumnCompletionProvider.cs" Link="_src\Completion\InsertColumnCompletionProvider.cs" />
+    <Compile Include="..\Completion\UpdateSetCompletionProvider.cs" Link="_src\Completion\UpdateSetCompletionProvider.cs" />
+    <Compile Include="..\Completion\UnqualifiedColumnCompletionProvider.cs" Link="_src\Completion\UnqualifiedColumnCompletionProvider.cs" />
+    <Compile Include="..\Completion\CompletionEngine.cs" Link="_src\Completion\CompletionEngine.cs" />
+    <Compile Include="..\Completion\SimilarColumnJoinCompletionProvider.cs" Link="_src\Completion\SimilarColumnJoinCompletionProvider.cs" />
     <Compile Include="..\Models\ParameterInfo.cs" Link="_src\Models\ParameterInfo.cs" />
     <Compile Include="..\Models\ProcedureInfo.cs" Link="_src\Models\ProcedureInfo.cs" />
     <Compile Include="..\Models\UserFunctionInfo.cs" Link="_src\Models\UserFunctionInfo.cs" />

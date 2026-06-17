@@ -95,6 +95,11 @@
     <Compile Include="Completion\CompletionRequestBuilder.cs" />
     <Compile Include="Completion\CompletionEngine.cs" />
     <Compile Include="Completion\StoredProcedureCompletionProvider.cs" />
+    <Compile Include="Completion\StoredProcedureParameterCompletionProvider.cs" />
+    <Compile Include="Completion\SchemaCompletionProvider.cs" />
+    <Compile Include="Completion\InsertColumnCompletionProvider.cs" />
+    <Compile Include="Completion\UpdateSetCompletionProvider.cs" />
+    <Compile Include="Completion\UnqualifiedColumnCompletionProvider.cs" />
     <Compile Include="Completion\UserDefinedFunctionCompletionProvider.cs" />
     <Compile Include="UI\AutoCompletePopup.cs" />
     <Compile Include="Editor\SqlCommandFilter.cs" />

@@ -15,7 +15,8 @@ namespace SsmsAutocompletion {
             Dictionary<string, List<ColumnInfo>> columnMap,
             Dictionary<string, List<ForeignKeyInfo>> foreignKeyMap,
             List<ProcedureInfo> procedures,
-            List<UserFunctionInfo> userFunctions) {
+            List<UserFunctionInfo> userFunctions,
+            List<string> schemas) {
 
             var server = new Server(connection);
 

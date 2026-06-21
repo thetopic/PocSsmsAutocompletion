@@ -130,5 +130,17 @@ namespace SsmsAutocompletion.Tests {
         public void IsAfterWithKeyword_AfterSelect_False() {
             Assert.IsFalse(Build("SELECT ").IsAfterWithKeyword);
         }
+
+        // ── DELETE statements (FROM/WHERE detection is statement-agnostic) ──────
+
+        [TestMethod]
+        public void DeleteFrom_IsAfterFromKeyword_True() {
+            Assert.IsTrue(Build("DELETE FROM ").IsAfterFromKeyword);
+        }
+
+        [TestMethod]
+        public void DeleteFromTableWhere_IsWhereContext_True() {
+            Assert.IsTrue(Build("DELETE FROM Orders WHERE ").IsWhereContext);
+        }
     }
 }

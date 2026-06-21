@@ -18,7 +18,7 @@ namespace SsmsAutocompletion {
             if (!request.IsInSelectList && !request.IsWhereContext)                return Array.Empty<CompletionItem>();
             if (request.ConnectionKey == null || request.ConnectionKey.IsEmpty)    return Array.Empty<CompletionItem>();
 
-            var aliasMap = _aliasExtractor.Extract(request.ParseResult);
+            var aliasMap = _aliasExtractor.ExtractInScope(request.ParseResult, request.Line, request.Column);
             if (aliasMap.Count == 0) return Array.Empty<CompletionItem>();
 
             var seen  = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

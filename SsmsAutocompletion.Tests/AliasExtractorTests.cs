@@ -92,5 +92,60 @@ namespace SsmsAutocompletion.Tests {
             // key is stored lowercased
             Assert.IsTrue(map.ContainsKey("o"));
         }
+
+        // ── DELETE statements (alias detection is statement-agnostic) ───────────
+
+        [TestMethod]
+        public void Delete_WithAlias_Resolved() {
+            var map = Extract("DELETE FROM Orders AS o WHERE o.Id = 1");
+            Assert.IsTrue(map.ContainsKey("o"));
+            Assert.AreEqual("Orders", map["o"].TableName);
+        }
+
+        [TestMethod]
+        public void DeleteOldStyle_MultiTableAlias_Resolved() {
+            var map = Extract(
+                "DELETE o FROM Orders AS o JOIN Customers c ON c.Id = o.CustomerId WHERE c.Active = 0");
+            Assert.IsTrue(map.ContainsKey("o"));
+            Assert.IsTrue(map.ContainsKey("c"));
+        }
+
+        // ── ExtractInScope: UNION branch isolation ──────────────────────────────
+
+        private static (int line, int col) Pos(string sql, int position) =>
+            Parser.GetLineColumn(sql, position);
+
+        [TestMethod]
+        public void ExtractInScope_Union_FirstBranch_OnlyT1Visible() {
+            string sql = "SELECT a FROM T1 t1 WHERE t1.a = 1 UNION SELECT b FROM T2 t2 WHERE t2.b = 1";
+            int cursor = sql.IndexOf(" UNION"); // end of first branch, before UNION
+            var (line, col) = Pos(sql, cursor);
+            var map = Extractor.ExtractInScope(Parser.Parse(sql), line, col);
+            Assert.IsTrue(map.ContainsKey("t1"));
+            Assert.IsFalse(map.ContainsKey("t2"));
+        }
+
+        [TestMethod]
+        public void ExtractInScope_Union_SecondBranch_OnlyT2Visible() {
+            string sql = "SELECT a FROM T1 t1 UNION SELECT b FROM T2 t2 WHERE ";
+            var (line, col) = Pos(sql, sql.Length);
+            var map = Extractor.ExtractInScope(Parser.Parse(sql), line, col);
+            Assert.IsTrue(map.ContainsKey("t2"));
+            Assert.IsFalse(map.ContainsKey("t1"));
+        }
+
+        [TestMethod]
+        public void ExtractInScope_NoUnion_BehavesLikeExtract() {
+            string sql = "SELECT a FROM Orders o WHERE ";
+            var (line, col) = Pos(sql, sql.Length);
+            var scoped = Extractor.ExtractInScope(Parser.Parse(sql), line, col);
+            Assert.IsTrue(scoped.ContainsKey("o"));
+        }
+
+        [TestMethod]
+        public void ExtractInScope_NullParseResult_ReturnsEmpty() {
+            var map = Extractor.ExtractInScope(null, 1, 1);
+            Assert.AreEqual(0, map.Count);
+        }
     }
 }

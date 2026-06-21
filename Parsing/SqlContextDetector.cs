@@ -392,6 +392,6 @@ namespace SsmsAutocompletion {
         }
 
         private static bool IsWordCharacter(char character) =>
-            char.IsLetterOrDigit(character) || character == '_';
+            char.IsLetterOrDigit(character) || character == '_' || character == '#';
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.SqlServer.Management.SqlParser.Parser;
+using Microsoft.SqlServer.Management.SqlParser.SqlCodeDom;
 using System;
 using System.Collections.Generic;
 
@@ -16,17 +17,86 @@ namespace SsmsAutocompletion {
         public IReadOnlyDictionary<string, TableInfo> Extract(ParseResult parseResult) {
             if (parseResult == null) return new Dictionary<string, TableInfo>();
             var map = new Dictionary<string, TableInfo>(StringComparer.OrdinalIgnoreCase);
-            try { PopulateFromTokenManager(parseResult, map); }
+            try {
+                var tokenManager = parseResult.Script?.TokenManager;
+                if (tokenManager != null) PopulateFromTokenManagerRange(tokenManager, 0, tokenManager.Count - 1, map);
+            }
             catch { }
             return map;
         }
 
-        private void PopulateFromTokenManager(ParseResult parseResult, Dictionary<string, TableInfo> map) {
-            var tokenManager = parseResult.Script?.TokenManager;
-            if (tokenManager == null) return;
-            int count = tokenManager.Count;
-            int index = 0;
-            while (index < count) {
+        public IReadOnlyDictionary<string, TableInfo> ExtractInScope(ParseResult parseResult, int line, int column) {
+            if (parseResult == null) return new Dictionary<string, TableInfo>();
+            try {
+                var tokenManager = parseResult.Script?.TokenManager;
+                if (tokenManager == null) return Extract(parseResult);
+
+                var range = FindScopeRange(parseResult, line, column);
+                if (range == null) return Extract(parseResult);
+
+                int startIndex  = Math.Max(0, tokenManager.FindToken(range.Value.start.LineNumber, range.Value.start.ColumnNumber));
+                int cursorIndex = tokenManager.FindToken(line, column);
+                int endIndex    = Math.Max(tokenManager.FindToken(range.Value.end.LineNumber, range.Value.end.ColumnNumber), cursorIndex);
+
+                var map = new Dictionary<string, TableInfo>(StringComparer.OrdinalIgnoreCase);
+                PopulateFromTokenManagerRange(tokenManager, startIndex, endIndex, map);
+                return map;
+            }
+            catch { return Extract(parseResult); }
+        }
+
+        private static (Location start, Location end)? FindScopeRange(ParseResult parseResult, int line, int column) {
+            var script = parseResult.Script;
+            if (script == null) return null;
+            SqlSelectStatement matchedStmt = null;
+            foreach (SqlBatch batch in script.Batches)
+                foreach (SqlStatement stmt in batch.Statements) {
+                    if (!(stmt is SqlSelectStatement select)) continue;
+                    var start = select.StartLocation;
+                    if (start == null) continue;
+                    if (ComparePosition(line, column, start.LineNumber, start.ColumnNumber) < 0) continue;
+                    matchedStmt = select;
+                }
+            if (matchedStmt == null) return null;
+
+            var queryExpr = matchedStmt.SelectSpecification?.QueryExpression;
+            if (queryExpr == null) return null;
+            return FindBranchRange(queryExpr, line, column) ?? (queryExpr.StartLocation, queryExpr.EndLocation);
+        }
+
+        private static (Location start, Location end)? FindBranchRange(SqlQueryExpression queryExpr, int line, int column) {
+            if (!(queryExpr is SqlBinaryQueryExpression binary)) return (queryExpr.StartLocation, queryExpr.EndLocation);
+
+            if (Contains(binary.Left.StartLocation, binary.Left.EndLocation, line, column))
+                return FindBranchRange(binary.Left, line, column) ?? (binary.Left.StartLocation, binary.Left.EndLocation);
+
+            // Right is the most recently typed branch — its EndLocation may not yet cover
+            // trailing clauses still being typed (e.g. "... UNION SELECT ... WHERE "),
+            // so only require the cursor to be at or after its start; the caller widens the
+            // end bound to the cursor position regardless of what we return here.
+            if (ComparePosition(line, column, binary.Right.StartLocation.LineNumber, binary.Right.StartLocation.ColumnNumber) >= 0)
+                return FindBranchRange(binary.Right, line, column) ?? (binary.Right.StartLocation, binary.Right.EndLocation);
+
+            return null; // cursor outside both branches (e.g. trailing ORDER BY) — caller falls back to whole statement
+        }
+
+        private static bool Contains(Location start, Location end, int line, int column) {
+            if (start == null || end == null) return false;
+            return ComparePosition(line, column, start.LineNumber, start.ColumnNumber) >= 0
+                && ComparePosition(line, column, end.LineNumber, end.ColumnNumber) <= 0;
+        }
+
+        private static int ComparePosition(int line, int column, int refLine, int refColumn) {
+            if (line != refLine) return line < refLine ? -1 : 1;
+            if (column != refColumn) return column < refColumn ? -1 : 1;
+            return 0;
+        }
+
+        private void PopulateFromTokenManagerRange(
+            TokenManager tokenManager, int startIndex, int endIndex, Dictionary<string, TableInfo> map) {
+            int index = Math.Max(0, startIndex);
+            int boundedCount = Math.Min(tokenManager.Count, endIndex + 1);
+            while (index < boundedCount) {
                 string tokenText = tokenManager.GetText(index) ?? "";
                 bool isFromOrJoin = string.Equals(tokenText, "FROM", StringComparison.OrdinalIgnoreCase)
                                  || string.Equals(tokenText, "JOIN",  StringComparison.OrdinalIgnoreCase);

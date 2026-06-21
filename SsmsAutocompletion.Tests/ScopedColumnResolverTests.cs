@@ -98,6 +98,28 @@ namespace SsmsAutocompletion.Tests {
         }
 
         [TestMethod]
+        public void Union_SecondBranch_OnlyT2ColumnsVisible() {
+            var metadata = new FakeMetadata();
+            metadata.AddColumns("dbo", "T1", "a");
+            metadata.AddColumns("dbo", "T2", "b");
+            var resolver = Build(metadata);
+            string sql = "SELECT a FROM T1 t1 UNION SELECT b FROM T2 t2 WHERE ";
+            var parseResult = Parser.Parse(sql);
+            var (line, col)  = Parser.GetLineColumn(sql, sql.Length);
+            var request = new CompletionRequest(
+                sql, sql.Length, line, col,
+                new ConnectionKey("srv|db"), parseResult, null,
+                isDotContext: false, qualifier: null,
+                isAfterFromKeyword: false, isJoinOnContext: false, isAfterJoinKeyword: false,
+                isWhereContext: true, isAfterTableInFromJoin: false, tableNameBeforeCursor: null,
+                snapshot: null);
+
+            var items = resolver.GetVisibleColumns(request).Select(i => i.DisplayText).ToList();
+            CollectionAssert.Contains(items, "b");
+            CollectionAssert.DoesNotContain(items, "a");
+        }
+
+        [TestMethod]
         public void NoAliases_ReturnsEmpty() {
             var metadata = new FakeMetadata();
             var resolver  = Build(metadata);

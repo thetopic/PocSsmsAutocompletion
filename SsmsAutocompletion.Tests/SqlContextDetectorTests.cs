@@ -51,6 +51,12 @@ namespace SsmsAutocompletion.Tests {
             Assert.IsFalse(Detector.IsDotContext(SnapshotHelper.Make(""), 0));
         }
 
+        [TestMethod]
+        public void IsDotContext_TempTableHash_True() {
+            string text = "#temp.";
+            Assert.IsTrue(Detector.IsDotContext(SnapshotHelper.Make(text), text.Length));
+        }
+
         // ══════════════════════════════════════════════════════════════════════
         // GetQualifier
         // ══════════════════════════════════════════════════════════════════════
@@ -79,6 +85,13 @@ namespace SsmsAutocompletion.Tests {
             // "dbo.Orders.col" → qualifier is "Orders"
             string text = "dbo.Orders.col";
             Assert.AreEqual("Orders", Detector.GetQualifier(SnapshotHelper.Make(text), text.Length));
+        }
+
+        [TestMethod]
+        public void GetQualifier_TempTableHash_IncludesHash() {
+            // "#temp.col" → qualifier is "#temp" (hash must be retained)
+            string text = "#temp.col";
+            Assert.AreEqual("#temp", Detector.GetQualifier(SnapshotHelper.Make(text), text.Length));
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -313,6 +326,16 @@ namespace SsmsAutocompletion.Tests {
         // ══════════════════════════════════════════════════════════════════════
         // DetectAliasContext  (uses real TokenManager)
         // ══════════════════════════════════════════════════════════════════════
+
+        [TestMethod]
+        public void DetectAliasContext_AfterTableInDeleteFrom_True() {
+            string sql = "DELETE o FROM Orders ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            var (isAfterTable, tableName) = Detector.DetectAliasContext(result, line, col);
+            Assert.IsTrue(isAfterTable);
+            Assert.AreEqual("Orders", tableName);
+        }
 
         [TestMethod]
         public void DetectAliasContext_AfterTableInFrom_True() {

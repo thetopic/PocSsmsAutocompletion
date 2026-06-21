@@ -44,6 +44,9 @@ namespace SsmsAutocompletion {
         private static readonly ISelectListAliasExtractor SelectListAliasExtractor =
             new SelectListAliasExtractor();
 
+        private static readonly ITempTableExtractor TempTableExtractor =
+            new TempTableExtractor();
+
         private static readonly ISqlParser SqlParser =
             new SsmsSqlParser();
 
@@ -96,11 +99,13 @@ namespace SsmsAutocompletion {
                 new CteCompletionProvider(CteExtractor),
                 new CteColumnCompletionProvider(CteExtractor, CteColumnExtractor, AliasExtractor),
                 new DerivedTableColumnCompletionProvider(DerivedTableExtractor),
+                new TempTableColumnCompletionProvider(TempTableExtractor, AliasExtractor),
                 new UnqualifiedColumnCompletionProvider(DatabaseMetadata, AliasExtractor),
                 new GroupByColumnCompletionProvider(ScopedColumnResolver),
                 new HavingColumnCompletionProvider(ScopedColumnResolver),
                 new OrderByColumnCompletionProvider(ScopedColumnResolver, SelectListAliasExtractor),
                 new TableCompletionProvider(DatabaseMetadata),
+                new TempTableCompletionProvider(TempTableExtractor),
                 new StoredProcedureCompletionProvider(DatabaseMetadata),
                 new StoredProcedureParameterCompletionProvider(DatabaseMetadata),
                 new InsertColumnCompletionProvider(DatabaseMetadata),

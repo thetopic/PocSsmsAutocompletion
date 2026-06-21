@@ -45,6 +45,7 @@ namespace SsmsAutocompletion.Tests {
             var map  = new Dictionary<string, TableInfo>(System.StringComparer.OrdinalIgnoreCase);
             foreach (var (alias, table) in entries) map[alias] = table;
             mock.Setup(e => e.Extract(It.IsAny<ParseResult>())).Returns(map);
+            mock.Setup(e => e.ExtractInScope(It.IsAny<ParseResult>(), It.IsAny<int>(), It.IsAny<int>())).Returns(map);
             return mock.Object;
         }
 

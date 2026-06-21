@@ -23,7 +23,7 @@ namespace SsmsAutocompletion {
         }
 
         public IReadOnlyList<CompletionItem> GetVisibleColumns(CompletionRequest request) {
-            var aliasMap      = _aliasExtractor.Extract(request.ParseResult);
+            var aliasMap      = _aliasExtractor.ExtractInScope(request.ParseResult, request.Line, request.Column);
             var derivedTables = _derivedTableExtractor.Extract(request.ParseResult);
             var cteNames      = _cteExtractor.Extract(request.ParseResult);
 

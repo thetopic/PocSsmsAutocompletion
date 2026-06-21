@@ -19,7 +19,7 @@ namespace SsmsAutocompletion {
             if (request.IsAfterExecKeyword) return Array.Empty<CompletionItem>();
             var items = new List<CompletionItem>(Keywords.Count);
             foreach (string keyword in Keywords)
-                items.Add(new CompletionItem(keyword, keyword + " ", "Keyword", CompletionItemKind.Keyword));
+                items.Add(new CompletionItem(keyword, keyword + " ", "Keyword", CompletionItemKind.Keyword, rank: 3));
             return items.AsReadOnly();
         }
     }

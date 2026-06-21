@@ -30,6 +30,7 @@ namespace SsmsAutocompletion {
             bool isAfterFromKeyword = string.Equals(wordBefore, "FROM",    System.StringComparison.OrdinalIgnoreCase);
             bool isAfterExecKeyword = string.Equals(wordBefore, "EXEC",    System.StringComparison.OrdinalIgnoreCase)
                                    || string.Equals(wordBefore, "EXECUTE", System.StringComparison.OrdinalIgnoreCase);
+            bool isAfterWithKeyword = string.Equals(wordBefore, "WITH",    System.StringComparison.OrdinalIgnoreCase);
 
             bool isJoinOnContext    = _contextDetector.IsAfterKeyword(parseResult, line, column, "ON");
             bool isAfterJoinKeyword = _contextDetector.IsAfterKeyword(parseResult, line, column, "JOIN");
@@ -44,6 +45,10 @@ namespace SsmsAutocompletion {
             string nearestClause  = _contextDetector.GetNearestClauseKeyword(snapshot, caretPosition);
             bool   isInSelectList = string.Equals(nearestClause, "SELECT", System.StringComparison.OrdinalIgnoreCase);
 
+            bool isGroupByContext = _contextDetector.IsInsideGroupByClause(parseResult, line, column);
+            bool isHavingContext  = _contextDetector.IsInsideHavingClause(parseResult, line, column);
+            bool isOrderByContext = _contextDetector.IsInsideOrderByClause(parseResult, line, column);
+
             return new CompletionRequest(
                 sql, caretPosition, line, column,
                 connectionKey, parseResult, metadataProvider,
@@ -54,7 +59,8 @@ namespace SsmsAutocompletion {
                 isInsideProc, procName, alreadyProvided,
                 isInsertCols, isUpdateSet,
                 isInsertCols ? insertTable : (isUpdateSet ? updateTable : null),
-                isInSelectList);
+                isInSelectList, isGroupByContext, isHavingContext, isOrderByContext,
+                isAfterWithKeyword);
         }
     }
 }

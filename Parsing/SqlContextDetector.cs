@@ -67,6 +67,67 @@ namespace SsmsAutocompletion {
             catch { return false; }
         }
 
+        public bool IsInsideGroupByClause(ParseResult parseResult, int line, int column) {
+            try {
+                var tokenManager = parseResult?.Script?.TokenManager;
+                if (tokenManager == null) return false;
+                int cursorToken = tokenManager.FindToken(line, column);
+                int lastGroupByIndex = -1;
+                int lastEndIndex     = -1;
+                string previousText  = null;
+                for (int i = 0; i < cursorToken && i < tokenManager.Count; i++) {
+                    var tok = tokenManager.GetToken(i);
+                    if (tok == null || !tok.IsSignificant) continue;
+                    string text = tokenManager.GetText(i)?.ToUpperInvariant() ?? "";
+                    if (text == "BY" && previousText == "GROUP") lastGroupByIndex = i;
+                    if (text == "HAVING" || text == "ORDER" || text == "UNION") lastEndIndex = i;
+                    previousText = text;
+                }
+                return lastGroupByIndex > lastEndIndex && lastGroupByIndex >= 0;
+            }
+            catch { return false; }
+        }
+
+        public bool IsInsideHavingClause(ParseResult parseResult, int line, int column) {
+            try {
+                var tokenManager = parseResult?.Script?.TokenManager;
+                if (tokenManager == null) return false;
+                int cursorToken = tokenManager.FindToken(line, column);
+                int lastHavingIndex = -1;
+                int lastEndIndex    = -1;
+                for (int i = 0; i < cursorToken && i < tokenManager.Count; i++) {
+                    var tok = tokenManager.GetToken(i);
+                    if (tok == null || !tok.IsSignificant) continue;
+                    string text = tokenManager.GetText(i)?.ToUpperInvariant() ?? "";
+                    if (text == "HAVING") lastHavingIndex = i;
+                    if (text == "ORDER" || text == "UNION") lastEndIndex = i;
+                }
+                return lastHavingIndex > lastEndIndex && lastHavingIndex >= 0;
+            }
+            catch { return false; }
+        }
+
+        public bool IsInsideOrderByClause(ParseResult parseResult, int line, int column) {
+            try {
+                var tokenManager = parseResult?.Script?.TokenManager;
+                if (tokenManager == null) return false;
+                int cursorToken = tokenManager.FindToken(line, column);
+                int lastOrderByIndex = -1;
+                int lastEndIndex     = -1;
+                string previousText  = null;
+                for (int i = 0; i < cursorToken && i < tokenManager.Count; i++) {
+                    var tok = tokenManager.GetToken(i);
+                    if (tok == null || !tok.IsSignificant) continue;
+                    string text = tokenManager.GetText(i)?.ToUpperInvariant() ?? "";
+                    if (text == "BY" && previousText == "ORDER") lastOrderByIndex = i;
+                    if (text == "UNION") lastEndIndex = i;
+                    previousText = text;
+                }
+                return lastOrderByIndex > lastEndIndex && lastOrderByIndex >= 0;
+            }
+            catch { return false; }
+        }
+
         public string GetCurrentWord(ITextSnapshot snapshot, int caretPosition) {
             if (caretPosition <= 0 || caretPosition > snapshot.Length) return "";
             int start = FindWordStart(snapshot, caretPosition);

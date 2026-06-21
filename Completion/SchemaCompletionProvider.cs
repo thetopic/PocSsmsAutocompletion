@@ -30,7 +30,7 @@ namespace SsmsAutocompletion {
 
             var items = new List<CompletionItem>(schemas.Count);
             foreach (var schema in schemas)
-                items.Add(new CompletionItem(schema, schema, "Schema", CompletionItemKind.Schema));
+                items.Add(new CompletionItem(schema, schema, "Schema", CompletionItemKind.Schema, rank: 1));
             return items.AsReadOnly();
         }
 

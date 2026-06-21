@@ -100,5 +100,15 @@ namespace SsmsAutocompletion.Tests {
             var cols = Extractor.ExtractColumns(null, "cte");
             Assert.AreEqual(0, cols.Count);
         }
+
+        // ── Recursive CTE (characterization: anchor member defines the columns) ─
+
+        [TestMethod]
+        public void RecursiveCte_ColumnsFromAnchorMember() {
+            var cols = Extract(
+                "WITH cte AS (SELECT 1 AS n UNION ALL SELECT n + 1 FROM cte WHERE n < 10) SELECT * FROM cte",
+                "cte");
+            CollectionAssert.AreEqual(new[] { "n" }, cols.ToList());
+        }
     }
 }

@@ -36,29 +36,7 @@ namespace SsmsAutocompletion {
             }
 
             // Derive from SELECT clause; for UNION/INTERSECT/EXCEPT use the first branch
-            SqlQueryExpression queryExpr = cte.QueryExpression;
-            while (queryExpr is SqlBinaryQueryExpression binary)
-                queryExpr = binary.Left;
-
-            var spec = queryExpr as SqlQuerySpecification;
-            if (spec?.SelectClause?.SelectExpressions == null) return Array.Empty<string>();
-
-            var columns = new List<string>();
-            foreach (SqlSelectExpression selectExpr in spec.SelectClause.SelectExpressions) {
-                if (!(selectExpr is SqlSelectScalarExpression scalar)) continue; // skip *
-
-                // Explicit alias wins
-                string alias = scalar.Alias?.Value;
-                if (!string.IsNullOrEmpty(alias)) { columns.Add(alias); continue; }
-
-                // Plain column reference: [schema.]table.column or column
-                if (scalar.Expression is SqlColumnRefExpression colRef) {
-                    string col = colRef.ColumnName?.Value;
-                    if (!string.IsNullOrEmpty(col)) columns.Add(col);
-                }
-                // Expression without alias → no deterministic name, skip
-            }
-            return columns.AsReadOnly();
+            return SelectListColumnNaming.ExtractColumnNames(cte.QueryExpression);
         }
     }
 }

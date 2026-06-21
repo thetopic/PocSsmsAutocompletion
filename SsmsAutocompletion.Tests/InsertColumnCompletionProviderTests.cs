@@ -73,14 +73,34 @@ namespace SsmsAutocompletion.Tests {
                 MetaWith("dbo", "Orders", Col("CustomerID"), Col("OrderDate")));
             var sql = "INSERT INTO dbo.Orders (";
             var req = Make(sql, sql.Length);
-            Assert.AreEqual(2, p.GetCompletions(req).Count);
+            // 2 individual columns + 1 synthetic full-template item
+            Assert.AreEqual(3, p.GetCompletions(req).Count);
+        }
+
+        [TestMethod]
+        public void EmptyColumnList_IncludesFullTemplateItem() {
+            var p = new InsertColumnCompletionProvider(
+                MetaWith("dbo", "Orders", Col("CustomerID"), Col("OrderDate")));
+            var sql = "INSERT INTO dbo.Orders (";
+            var result = p.GetCompletions(Make(sql, sql.Length));
+            var template = result.Single(i => i.InsertText.Contains("VALUES"));
+            Assert.AreEqual("CustomerID, OrderDate) VALUES (@CustomerID, @OrderDate)", template.InsertText);
+        }
+
+        [TestMethod]
+        public void PartiallyTypedColumnList_NoTemplateItem() {
+            var p = new InsertColumnCompletionProvider(
+                MetaWith("dbo", "Orders", Col("CustomerID"), Col("OrderDate")));
+            string sql = "INSERT INTO dbo.Orders (CustomerID, ";
+            var result = p.GetCompletions(Make(sql, sql.Length));
+            Assert.IsFalse(result.Any(i => i.InsertText.Contains("VALUES")));
         }
 
         [TestMethod]
         public void Items_HaveColumnKind() {
             var p   = new InsertColumnCompletionProvider(MetaWith("dbo", "Orders", Col("ID")));
             var sql = "INSERT INTO dbo.Orders (";
-            var item = p.GetCompletions(Make(sql, sql.Length)).Single();
+            var item = p.GetCompletions(Make(sql, sql.Length)).Single(i => i.DisplayText == "ID");
             Assert.AreEqual(CompletionItemKind.Column, item.Kind);
         }
 
@@ -111,7 +131,7 @@ namespace SsmsAutocompletion.Tests {
             var p   = new InsertColumnCompletionProvider(MetaWith("hr", "Employees", Col("Name")));
             var sql = "INSERT INTO hr.Employees (";
             var result = p.GetCompletions(Make(sql, sql.Length, targetTable: "hr.Employees"));
-            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual(1, result.Count(i => i.Kind == CompletionItemKind.Column && i.DisplayText == "Name"));
         }
     }
 }

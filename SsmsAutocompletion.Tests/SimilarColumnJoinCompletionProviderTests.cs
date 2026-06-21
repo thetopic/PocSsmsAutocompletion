@@ -143,13 +143,13 @@ namespace SsmsAutocompletion.Tests {
         // ── Rank ──────────────────────────────────────────────────────────────
 
         [TestMethod]
-        public void SuggestedItems_HaveRank1() {
+        public void SuggestedItems_HaveRank2() {
             var (p, pr) = MakeProvider(
                 new[] { Col("Status") },
                 new[] { Col("Status") });
             var result = p.GetCompletions(MakeRequest(pr));
-            Assert.AreEqual(1, result[0].Rank,
-                "SimilarColumnJoinCompletionProvider items must carry Rank=1");
+            Assert.AreEqual(2, result[0].Rank,
+                "SimilarColumnJoinCompletionProvider items must carry Rank=2");
         }
     }
 }

@@ -22,7 +22,7 @@ namespace SsmsAutocompletion {
             foreach (var proc in procedures) {
                 var display     = proc.ToString();
                 var description = BuildDescription(proc);
-                items.Add(new CompletionItem(display, display + " ", description, CompletionItemKind.StoredProcedure));
+                items.Add(new CompletionItem(display, display + " ", description, CompletionItemKind.StoredProcedure, rank: 3));
             }
             return items.AsReadOnly();
         }

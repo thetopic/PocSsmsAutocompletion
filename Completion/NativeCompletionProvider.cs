@@ -21,7 +21,8 @@ namespace SsmsAutocompletion {
                     string insertText = declaration.Title;
                     if (declaration.Type == DeclarationType.Table || declaration.Type == DeclarationType.View)
                         insertText += " ";
-                    items.Add(new CompletionItem(declaration.Title, insertText, declaration.Type.ToString()));
+                    items.Add(new CompletionItem(declaration.Title, insertText, declaration.Type.ToString(),
+                        CompletionItemKind.Keyword, rank: 3));
                 }
             }
             catch { }

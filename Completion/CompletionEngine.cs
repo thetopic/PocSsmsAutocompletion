@@ -72,17 +72,19 @@ namespace SsmsAutocompletion {
         private static IReadOnlyList<CompletionItem> SortByRank(IReadOnlyList<CompletionItem> items) {
             bool allSameRank = true;
             int firstRank = items.Count > 0 ? items[0].Rank : 0;
+            int minRank = firstRank, maxRank = firstRank;
             foreach (var item in items) {
-                if (item.Rank != firstRank) { allSameRank = false; break; }
+                if (item.Rank != firstRank) allSameRank = false;
+                if (item.Rank < minRank) minRank = item.Rank;
+                if (item.Rank > maxRank) maxRank = item.Rank;
             }
             if (allSameRank) return items;
 
             // Stable sort: preserve relative order within each rank group
             var result = new List<CompletionItem>(items.Count);
-            foreach (var item in items)
-                if (item.Rank == 0) result.Add(item);
-            foreach (var item in items)
-                if (item.Rank != 0) result.Add(item);
+            for (int rank = minRank; rank <= maxRank; rank++)
+                foreach (var item in items)
+                    if (item.Rank == rank) result.Add(item);
             return result.AsReadOnly();
         }
 

@@ -75,6 +75,11 @@
     <Compile Include="Parsing\CteExtractor.cs" />
     <Compile Include="Parsing\ICteColumnExtractor.cs" />
     <Compile Include="Parsing\CteColumnExtractor.cs" />
+    <Compile Include="Parsing\SelectListColumnNaming.cs" />
+    <Compile Include="Parsing\IDerivedTableExtractor.cs" />
+    <Compile Include="Parsing\DerivedTableExtractor.cs" />
+    <Compile Include="Parsing\ISelectListAliasExtractor.cs" />
+    <Compile Include="Parsing\SelectListAliasExtractor.cs" />
     <Compile Include="Parsing\AliasGenerator.cs" />
     <Compile Include="Parsing\IContextDetector.cs" />
     <Compile Include="Parsing\SqlContextDetector.cs" />
@@ -91,6 +96,12 @@
     <Compile Include="Completion\AliasCompletionProvider.cs" />
     <Compile Include="Completion\CteCompletionProvider.cs" />
     <Compile Include="Completion\CteColumnCompletionProvider.cs" />
+    <Compile Include="Completion\DerivedTableColumnCompletionProvider.cs" />
+    <Compile Include="Completion\IScopedColumnResolver.cs" />
+    <Compile Include="Completion\ScopedColumnResolver.cs" />
+    <Compile Include="Completion\GroupByColumnCompletionProvider.cs" />
+    <Compile Include="Completion\HavingColumnCompletionProvider.cs" />
+    <Compile Include="Completion\OrderByColumnCompletionProvider.cs" />
     <Compile Include="Completion\NativeCompletionProvider.cs" />
     <Compile Include="Completion\CompletionRequestBuilder.cs" />
     <Compile Include="Completion\CompletionEngine.cs" />

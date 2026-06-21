@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq;
 
 namespace SsmsAutocompletion.Tests {
 
@@ -141,6 +142,41 @@ namespace SsmsAutocompletion.Tests {
             Assert.AreEqual("R0",  result[0].DisplayText);
             Assert.AreEqual("R1a", result[1].DisplayText);
             Assert.AreEqual("R1b", result[2].DisplayText);
+        }
+
+        [TestMethod]
+        public void MultipleRanks_OrderAscending() {
+            var result = RunEngine(
+                Ranked("R3", 3),
+                Ranked("R1", 1),
+                Ranked("R0", 0),
+                Ranked("R2", 2));
+            CollectionAssert.AreEqual(
+                new[] { "R0", "R1", "R2", "R3" },
+                result.Select(i => i.DisplayText).ToArray());
+        }
+
+        [TestMethod]
+        public void MultipleRanks_StableWithinEachRank() {
+            var result = RunEngine(
+                Ranked("R2a", 2),
+                Ranked("R0a", 0),
+                Ranked("R2b", 2),
+                Ranked("R0b", 0));
+            CollectionAssert.AreEqual(
+                new[] { "R0a", "R0b", "R2a", "R2b" },
+                result.Select(i => i.DisplayText).ToArray());
+        }
+
+        [TestMethod]
+        public void AllSameNonZeroRank_PreservesOrder_NoOp() {
+            var result = RunEngine(
+                Ranked("X", 2),
+                Ranked("Y", 2),
+                Ranked("Z", 2));
+            CollectionAssert.AreEqual(
+                new[] { "X", "Y", "Z" },
+                result.Select(i => i.DisplayText).ToArray());
         }
 
         // ── Helper ────────────────────────────────────────────────────────────

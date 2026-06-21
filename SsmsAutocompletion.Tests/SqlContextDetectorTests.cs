@@ -207,6 +207,110 @@ namespace SsmsAutocompletion.Tests {
             Assert.IsFalse(Detector.IsInsideWhereClause(null, 1, 1));
 
         // ══════════════════════════════════════════════════════════════════════
+        // IsInsideGroupByClause  (uses real TokenManager)
+        // ══════════════════════════════════════════════════════════════════════
+
+        [TestMethod]
+        public void IsInsideGroupByClause_True() {
+            string sql = "SELECT a, COUNT(*) FROM Orders GROUP BY ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsTrue(Detector.IsInsideGroupByClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideGroupByClause_BeforeGroupBy_False() {
+            string sql = "SELECT a FROM Orders ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsFalse(Detector.IsInsideGroupByClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideGroupByClause_AfterHaving_False() {
+            string sql = "SELECT a FROM Orders GROUP BY a HAVING COUNT(*) > ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsFalse(Detector.IsInsideGroupByClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideGroupByClause_InWhereClause_False() {
+            string sql = "SELECT a FROM Orders WHERE ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsFalse(Detector.IsInsideGroupByClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideGroupByClause_NullParseResult_False() =>
+            Assert.IsFalse(Detector.IsInsideGroupByClause(null, 1, 1));
+
+        // ══════════════════════════════════════════════════════════════════════
+        // IsInsideHavingClause  (uses real TokenManager)
+        // ══════════════════════════════════════════════════════════════════════
+
+        [TestMethod]
+        public void IsInsideHavingClause_True() {
+            string sql = "SELECT a, COUNT(*) FROM Orders GROUP BY a HAVING ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsTrue(Detector.IsInsideHavingClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideHavingClause_InGroupBy_False() {
+            string sql = "SELECT a, COUNT(*) FROM Orders GROUP BY ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsFalse(Detector.IsInsideHavingClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideHavingClause_AfterOrderBy_False() {
+            string sql = "SELECT a FROM Orders GROUP BY a HAVING COUNT(*) > 1 ORDER BY ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsFalse(Detector.IsInsideHavingClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideHavingClause_NullParseResult_False() =>
+            Assert.IsFalse(Detector.IsInsideHavingClause(null, 1, 1));
+
+        // ══════════════════════════════════════════════════════════════════════
+        // IsInsideOrderByClause  (uses real TokenManager)
+        // ══════════════════════════════════════════════════════════════════════
+
+        [TestMethod]
+        public void IsInsideOrderByClause_True() {
+            string sql = "SELECT a FROM Orders ORDER BY ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsTrue(Detector.IsInsideOrderByClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideOrderByClause_BeforeOrderBy_False() {
+            string sql = "SELECT a FROM Orders ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsFalse(Detector.IsInsideOrderByClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideOrderByClause_AfterUnion_False() {
+            string sql = "SELECT a FROM Orders ORDER BY a UNION SELECT a FROM Other ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsFalse(Detector.IsInsideOrderByClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideOrderByClause_NullParseResult_False() =>
+            Assert.IsFalse(Detector.IsInsideOrderByClause(null, 1, 1));
+
+        // ══════════════════════════════════════════════════════════════════════
         // DetectAliasContext  (uses real TokenManager)
         // ══════════════════════════════════════════════════════════════════════
 

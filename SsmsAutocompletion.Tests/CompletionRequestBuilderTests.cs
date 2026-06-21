@@ -82,5 +82,53 @@ namespace SsmsAutocompletion.Tests {
         public void IsAfterExecKeyword_AfterFrom_False() {
             Assert.IsFalse(Build("SELECT * FROM ").IsAfterExecKeyword);
         }
+
+        // ── IsGroupByContext ───────────────────────────────────────────────────
+
+        [TestMethod]
+        public void IsGroupByContext_AfterGroupBy_True() {
+            Assert.IsTrue(Build("SELECT a, COUNT(*) FROM Orders GROUP BY ").IsGroupByContext);
+        }
+
+        [TestMethod]
+        public void IsGroupByContext_BeforeGroupBy_False() {
+            Assert.IsFalse(Build("SELECT a FROM Orders ").IsGroupByContext);
+        }
+
+        // ── IsHavingContext ────────────────────────────────────────────────────
+
+        [TestMethod]
+        public void IsHavingContext_AfterHaving_True() {
+            Assert.IsTrue(Build("SELECT a, COUNT(*) FROM Orders GROUP BY a HAVING ").IsHavingContext);
+        }
+
+        [TestMethod]
+        public void IsHavingContext_InGroupBy_False() {
+            Assert.IsFalse(Build("SELECT a FROM Orders GROUP BY ").IsHavingContext);
+        }
+
+        // ── IsOrderByContext ───────────────────────────────────────────────────
+
+        [TestMethod]
+        public void IsOrderByContext_AfterOrderBy_True() {
+            Assert.IsTrue(Build("SELECT a FROM Orders ORDER BY ").IsOrderByContext);
+        }
+
+        [TestMethod]
+        public void IsOrderByContext_BeforeOrderBy_False() {
+            Assert.IsFalse(Build("SELECT a FROM Orders ").IsOrderByContext);
+        }
+
+        // ── IsAfterWithKeyword ─────────────────────────────────────────────────
+
+        [TestMethod]
+        public void IsAfterWithKeyword_AfterWithSpace_True() {
+            Assert.IsTrue(Build("WITH ").IsAfterWithKeyword);
+        }
+
+        [TestMethod]
+        public void IsAfterWithKeyword_AfterSelect_False() {
+            Assert.IsFalse(Build("SELECT ").IsAfterWithKeyword);
+        }
     }
 }

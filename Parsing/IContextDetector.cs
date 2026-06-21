@@ -10,6 +10,9 @@ namespace SsmsAutocompletion {
         string GetQualifier(ITextSnapshot snapshot, int caretPosition);
         bool IsAfterKeyword(ParseResult parseResult, int line, int column, string keyword);
         bool IsInsideWhereClause(ParseResult parseResult, int line, int column);
+        bool IsInsideGroupByClause(ParseResult parseResult, int line, int column);
+        bool IsInsideHavingClause(ParseResult parseResult, int line, int column);
+        bool IsInsideOrderByClause(ParseResult parseResult, int line, int column);
         string GetCurrentWord(ITextSnapshot snapshot, int caretPosition);
         ITrackingSpan GetWordSpan(ITextSnapshot snapshot, int caretPosition);
         string GetWordBefore(ITextSnapshot snapshot, int caretPosition);

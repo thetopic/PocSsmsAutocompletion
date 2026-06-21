@@ -25,7 +25,7 @@ namespace SsmsAutocompletion {
                 var display     = fn.ToString();
                 var description = BuildDescription(fn);
                 items.Add(new CompletionItem(display, display + "(", description,
-                    CompletionItemKind.UserDefinedFunction));
+                    CompletionItemKind.UserDefinedFunction, rank: 3));
             }
             return items.AsReadOnly();
         }

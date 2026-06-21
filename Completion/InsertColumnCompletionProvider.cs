@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SsmsAutocompletion {
 
@@ -26,7 +27,18 @@ namespace SsmsAutocompletion {
                 if (alreadyListed.Contains(col.ColumnName.ToLowerInvariant())) continue;
                 items.Add(new CompletionItem(col.ColumnName, col.ColumnName, col.DataType, CompletionItemKind.Column));
             }
+
+            if (alreadyListed.Count == 0)
+                items.Add(BuildFullTemplateItem(columns));
+
             return items.AsReadOnly();
+        }
+
+        private static CompletionItem BuildFullTemplateItem(IReadOnlyList<ColumnInfo> columns) {
+            string columnList = string.Join(", ", columns.Select(c => c.ColumnName));
+            string valuesList = string.Join(", ", columns.Select(c => "@" + c.ColumnName));
+            string insertText = columnList + ") VALUES (" + valuesList + ")";
+            return new CompletionItem("* (toutes les colonnes)", insertText, "Modèle INSERT complet", CompletionItemKind.Column);
         }
 
         private static void ParseTableName(string fullName, out string schema, out string tableName) {

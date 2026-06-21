@@ -95,7 +95,7 @@ namespace SsmsAutocompletion {
             TableInfo table, string alias, string onClause, string description) {
             string display = $"JOIN {table} {alias} ON {onClause}";
             if (seen.Add(display))
-                items.Add(new CompletionItem(display, display + " ", description, CompletionItemKind.Join));
+                items.Add(new CompletionItem(display, display + " ", description, CompletionItemKind.Join, rank: 1));
         }
 
         private static string BuildOnClause(

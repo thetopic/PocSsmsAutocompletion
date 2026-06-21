@@ -155,7 +155,7 @@ namespace SsmsAutocompletion {
         private static IReadOnlyList<CompletionItem> BuildItems() {
             var items = new List<CompletionItem>(Functions.Count);
             foreach (var (name, description) in Functions)
-                items.Add(new CompletionItem(name, name + "(", description, CompletionItemKind.Function));
+                items.Add(new CompletionItem(name, name + "(", description, CompletionItemKind.Function, rank: 3));
             return items.AsReadOnly();
         }
     }

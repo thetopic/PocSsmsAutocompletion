@@ -37,6 +37,18 @@ namespace SsmsAutocompletion {
         // SELECT list unqualified column completion
         public bool   IsInSelectList  { get; }
 
+        // GROUP BY column completion
+        public bool   IsGroupByContext { get; }
+
+        // HAVING column completion
+        public bool   IsHavingContext { get; }
+
+        // ORDER BY column completion
+        public bool   IsOrderByContext { get; }
+
+        // CTE skeleton snippet
+        public bool   IsAfterWithKeyword { get; }
+
         public CompletionRequest(
             string sql, int caretPosition, int line, int column,
             ConnectionKey connectionKey, ParseResult parseResult,
@@ -47,7 +59,9 @@ namespace SsmsAutocompletion {
             bool isInsideProcedureCall = false, string procedureNameBeforeCursor = null,
             IReadOnlyList<string> alreadyProvidedParameters = null,
             bool isInsertColumnList = false, bool isUpdateSetClause = false,
-            string insertUpdateTargetTable = null, bool isInSelectList = false) {
+            string insertUpdateTargetTable = null, bool isInSelectList = false,
+            bool isGroupByContext = false, bool isHavingContext = false,
+            bool isOrderByContext = false, bool isAfterWithKeyword = false) {
             Sql                       = sql;
             CaretPosition             = caretPosition;
             Line                      = line;
@@ -72,6 +86,10 @@ namespace SsmsAutocompletion {
             IsUpdateSetClause         = isUpdateSetClause;
             InsertUpdateTargetTable   = insertUpdateTargetTable;
             IsInSelectList            = isInSelectList;
+            IsGroupByContext          = isGroupByContext;
+            IsHavingContext           = isHavingContext;
+            IsOrderByContext          = isOrderByContext;
+            IsAfterWithKeyword        = isAfterWithKeyword;
         }
     }
 }

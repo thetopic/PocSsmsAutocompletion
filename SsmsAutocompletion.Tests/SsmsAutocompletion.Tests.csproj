@@ -29,6 +29,17 @@
     <Compile Include="..\Parsing\CteExtractor.cs" Link="_src\Parsing\CteExtractor.cs" />
     <Compile Include="..\Parsing\ICteColumnExtractor.cs" Link="_src\Parsing\ICteColumnExtractor.cs" />
     <Compile Include="..\Parsing\CteColumnExtractor.cs" Link="_src\Parsing\CteColumnExtractor.cs" />
+    <Compile Include="..\Parsing\SelectListColumnNaming.cs" Link="_src\Parsing\SelectListColumnNaming.cs" />
+    <Compile Include="..\Parsing\IDerivedTableExtractor.cs" Link="_src\Parsing\IDerivedTableExtractor.cs" />
+    <Compile Include="..\Parsing\DerivedTableExtractor.cs" Link="_src\Parsing\DerivedTableExtractor.cs" />
+    <Compile Include="..\Parsing\ISelectListAliasExtractor.cs" Link="_src\Parsing\ISelectListAliasExtractor.cs" />
+    <Compile Include="..\Parsing\SelectListAliasExtractor.cs" Link="_src\Parsing\SelectListAliasExtractor.cs" />
+    <Compile Include="..\Completion\DerivedTableColumnCompletionProvider.cs" Link="_src\Completion\DerivedTableColumnCompletionProvider.cs" />
+    <Compile Include="..\Completion\IScopedColumnResolver.cs" Link="_src\Completion\IScopedColumnResolver.cs" />
+    <Compile Include="..\Completion\ScopedColumnResolver.cs" Link="_src\Completion\ScopedColumnResolver.cs" />
+    <Compile Include="..\Completion\GroupByColumnCompletionProvider.cs" Link="_src\Completion\GroupByColumnCompletionProvider.cs" />
+    <Compile Include="..\Completion\HavingColumnCompletionProvider.cs" Link="_src\Completion\HavingColumnCompletionProvider.cs" />
+    <Compile Include="..\Completion\OrderByColumnCompletionProvider.cs" Link="_src\Completion\OrderByColumnCompletionProvider.cs" />
     <Compile Include="..\Parsing\IContextDetector.cs" Link="_src\Parsing\IContextDetector.cs" />
     <Compile Include="..\Parsing\SqlContextDetector.cs" Link="_src\Parsing\SqlContextDetector.cs" />
     <Compile Include="..\Cache\IDatabaseMetadata.cs" Link="_src\Cache\IDatabaseMetadata.cs" />

@@ -61,7 +61,7 @@ namespace SsmsAutocompletion {
                     if (!AreSimilar(columnA.ColumnName, columnB.ColumnName)) continue;
                     if (fkCovered.Contains(MakePairKey(columnA.ColumnName, columnB.ColumnName))) continue;
                     string condition = $"{aliasA}.{columnA.ColumnName} = {aliasB}.{columnB.ColumnName}";
-                    items.Add(new CompletionItem(condition, condition, "Colonnes similaires", CompletionItemKind.Join, rank: 1));
+                    items.Add(new CompletionItem(condition, condition, "Colonnes similaires", CompletionItemKind.Join, rank: 2));
                 }
             }
         }

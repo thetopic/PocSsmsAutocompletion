@@ -79,5 +79,38 @@ namespace SsmsAutocompletion.Tests {
             Assert.AreEqual("alpha", names[0]);
             Assert.AreEqual("beta",  names[1]);
         }
+
+        // ── IsRecursive ────────────────────────────────────────────────────────
+
+        [TestMethod]
+        public void RecursiveCte_IsRecursive_True() {
+            var result = Parser.Parse(
+                "WITH cte AS (SELECT 1 AS n UNION ALL SELECT n + 1 FROM cte WHERE n < 10) SELECT * FROM cte");
+            Assert.IsTrue(Extractor.IsRecursive(result, "cte"));
+        }
+
+        [TestMethod]
+        public void NonRecursiveCte_IsRecursive_False() {
+            var result = Parser.Parse("WITH cte AS (SELECT 1 AS n) SELECT * FROM cte");
+            Assert.IsFalse(Extractor.IsRecursive(result, "cte"));
+        }
+
+        [TestMethod]
+        public void RecursiveCte_StillExtractsName() {
+            var names = Extract(
+                "WITH cte AS (SELECT 1 AS n UNION ALL SELECT n + 1 FROM cte WHERE n < 10) SELECT * FROM cte");
+            Assert.AreEqual(1, names.Count);
+            Assert.AreEqual("cte", names[0]);
+        }
+
+        [TestMethod]
+        public void IsRecursive_CteNotFound_ReturnsFalse() {
+            var result = Parser.Parse("WITH cte AS (SELECT 1) SELECT * FROM cte");
+            Assert.IsFalse(Extractor.IsRecursive(result, "nonexistent"));
+        }
+
+        [TestMethod]
+        public void IsRecursive_NullParseResult_ReturnsFalse() =>
+            Assert.IsFalse(Extractor.IsRecursive(null, "cte"));
     }
 }

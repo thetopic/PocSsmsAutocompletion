@@ -49,6 +49,9 @@ namespace SsmsAutocompletion {
         // CTE skeleton snippet
         public bool   IsAfterWithKeyword { get; }
 
+        // Window function OVER(PARTITION BY ... ORDER BY ...) column completion
+        public bool   IsWindowContext { get; }
+
         public CompletionRequest(
             string sql, int caretPosition, int line, int column,
             ConnectionKey connectionKey, ParseResult parseResult,
@@ -61,7 +64,8 @@ namespace SsmsAutocompletion {
             bool isInsertColumnList = false, bool isUpdateSetClause = false,
             string insertUpdateTargetTable = null, bool isInSelectList = false,
             bool isGroupByContext = false, bool isHavingContext = false,
-            bool isOrderByContext = false, bool isAfterWithKeyword = false) {
+            bool isOrderByContext = false, bool isAfterWithKeyword = false,
+            bool isWindowContext = false) {
             Sql                       = sql;
             CaretPosition             = caretPosition;
             Line                      = line;
@@ -90,6 +94,7 @@ namespace SsmsAutocompletion {
             IsHavingContext           = isHavingContext;
             IsOrderByContext          = isOrderByContext;
             IsAfterWithKeyword        = isAfterWithKeyword;
+            IsWindowContext           = isWindowContext;
         }
     }
 }

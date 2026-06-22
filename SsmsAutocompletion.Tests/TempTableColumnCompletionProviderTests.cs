@@ -50,6 +50,21 @@ namespace SsmsAutocompletion.Tests {
         }
 
         [TestMethod]
+        public void DotAfterTableVariable_ReturnsColumns() {
+            var request = BuildRequest("DECLARE @t TABLE (Id INT, Name VARCHAR(50)); SELECT * FROM @t", "@t");
+            var items = Provider.GetCompletions(request);
+            CollectionAssert.AreEqual(new[] { "Id", "Name" }, items.Select(i => i.DisplayText).ToList());
+        }
+
+        [TestMethod]
+        public void AliasOnTableVariable_ResolvesColumns() {
+            var request = BuildRequest(
+                "DECLARE @t TABLE (Id INT); SELECT * FROM @t v WHERE v.", "v");
+            var items = Provider.GetCompletions(request);
+            CollectionAssert.AreEqual(new[] { "Id" }, items.Select(i => i.DisplayText).ToList());
+        }
+
+        [TestMethod]
         public void AliasOnTempTable_ResolvesColumns() {
             var request = BuildRequest(
                 "CREATE TABLE #temp (Id INT, Name VARCHAR(50)); SELECT * FROM #temp t WHERE t.", "t");

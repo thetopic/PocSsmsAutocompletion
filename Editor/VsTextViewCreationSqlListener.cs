@@ -104,6 +104,7 @@ namespace SsmsAutocompletion {
                 new GroupByColumnCompletionProvider(ScopedColumnResolver),
                 new HavingColumnCompletionProvider(ScopedColumnResolver),
                 new OrderByColumnCompletionProvider(ScopedColumnResolver, SelectListAliasExtractor),
+                new WindowColumnCompletionProvider(ScopedColumnResolver),
                 new TableCompletionProvider(DatabaseMetadata),
                 new TempTableCompletionProvider(TempTableExtractor),
                 new StoredProcedureCompletionProvider(DatabaseMetadata),

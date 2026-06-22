@@ -13,6 +13,7 @@ namespace SsmsAutocompletion {
         bool IsInsideGroupByClause(ParseResult parseResult, int line, int column);
         bool IsInsideHavingClause(ParseResult parseResult, int line, int column);
         bool IsInsideOrderByClause(ParseResult parseResult, int line, int column);
+        bool IsInsideOverClause(ParseResult parseResult, int line, int column);
         string GetCurrentWord(ITextSnapshot snapshot, int caretPosition);
         ITrackingSpan GetWordSpan(ITextSnapshot snapshot, int caretPosition);
         string GetWordBefore(ITextSnapshot snapshot, int caretPosition);

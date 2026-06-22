@@ -53,6 +53,13 @@ namespace SsmsAutocompletion.Tests {
         }
 
         [TestMethod]
+        public void AfterFromKeyword_ReturnsTableVariableNames() {
+            string sql = "DECLARE @t TABLE (Id INT); SELECT * FROM ";
+            var items = Provider.GetCompletions(BuildRequest(sql));
+            CollectionAssert.Contains(items.Select(i => i.DisplayText).ToList(), "@t");
+        }
+
+        [TestMethod]
         public void NoTempTablesDefined_ReturnsEmpty() {
             string sql = "SELECT * FROM ";
             var items = Provider.GetCompletions(BuildRequest(sql));

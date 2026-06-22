@@ -44,6 +44,7 @@
     <Compile Include="..\Completion\OrderByColumnCompletionProvider.cs" Link="_src\Completion\OrderByColumnCompletionProvider.cs" />
     <Compile Include="..\Completion\TempTableColumnCompletionProvider.cs" Link="_src\Completion\TempTableColumnCompletionProvider.cs" />
     <Compile Include="..\Completion\TempTableCompletionProvider.cs" Link="_src\Completion\TempTableCompletionProvider.cs" />
+    <Compile Include="..\Completion\WindowColumnCompletionProvider.cs" Link="_src\Completion\WindowColumnCompletionProvider.cs" />
     <Compile Include="..\Parsing\IContextDetector.cs" Link="_src\Parsing\IContextDetector.cs" />
     <Compile Include="..\Parsing\SqlContextDetector.cs" Link="_src\Parsing\SqlContextDetector.cs" />
     <Compile Include="..\Cache\IDatabaseMetadata.cs" Link="_src\Cache\IDatabaseMetadata.cs" />

@@ -119,6 +119,18 @@ namespace SsmsAutocompletion.Tests {
             Assert.IsFalse(Build("SELECT a FROM Orders ").IsOrderByContext);
         }
 
+        // ── IsWindowContext ────────────────────────────────────────────────────
+
+        [TestMethod]
+        public void IsWindowContext_InsideOverPartitionBy_True() {
+            Assert.IsTrue(Build("SELECT ROW_NUMBER() OVER (PARTITION BY ").IsWindowContext);
+        }
+
+        [TestMethod]
+        public void IsWindowContext_OutsideOver_False() {
+            Assert.IsFalse(Build("SELECT a FROM Orders ").IsWindowContext);
+        }
+
         // ── IsAfterWithKeyword ─────────────────────────────────────────────────
 
         [TestMethod]

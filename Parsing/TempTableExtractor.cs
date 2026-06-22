@@ -23,15 +23,15 @@ namespace SsmsAutocompletion {
         private static void WalkStatement(SqlStatement stmt, Dictionary<string, IReadOnlyList<string>> map) {
             if (stmt is SqlCreateTableStatement create) {
                 string name = create.Name?.ToString();
-                if (!IsTempTableName(name)) return;
-                var columns = new List<string>();
-                var columnDefinitions = create.Definition?.ColumnDefinitions;
-                if (columnDefinitions != null)
-                    foreach (SqlColumnDefinition col in columnDefinitions) {
-                        string colName = col.Name?.Value;
-                        if (!string.IsNullOrEmpty(colName)) columns.Add(colName);
-                    }
-                map[name] = columns.AsReadOnly();
+                if (!IsLocalTableName(name)) return;
+                map[name] = ExtractColumnDefinitionNames(create.Definition);
+                return;
+            }
+
+            if (stmt is SqlInlineTableVariableDeclareStatement declare) {
+                string name = declare.Declaration?.Name;
+                if (!IsLocalTableName(name)) return;
+                map[name] = ExtractColumnDefinitionNames(declare.Declaration?.Definition);
                 return;
             }
 
@@ -40,12 +40,23 @@ namespace SsmsAutocompletion {
                 while (queryExpr is SqlBinaryQueryExpression binary) queryExpr = binary.Left;
                 if (!(queryExpr is SqlQuerySpecification spec)) return;
                 string targetName = spec.IntoClause?.IntoTarget?.ToString();
-                if (!IsTempTableName(targetName)) return;
+                if (!IsLocalTableName(targetName)) return;
                 map[targetName] = SelectListColumnNaming.ExtractColumnNames(select.SelectSpecification.QueryExpression);
             }
         }
 
-        private static bool IsTempTableName(string name) =>
-            !string.IsNullOrEmpty(name) && name.StartsWith("#", StringComparison.Ordinal);
+        private static IReadOnlyList<string> ExtractColumnDefinitionNames(SqlTableDefinition definition) {
+            var columns = new List<string>();
+            var columnDefinitions = definition?.ColumnDefinitions;
+            if (columnDefinitions != null)
+                foreach (SqlColumnDefinition col in columnDefinitions) {
+                    string colName = col.Name?.Value;
+                    if (!string.IsNullOrEmpty(colName)) columns.Add(colName);
+                }
+            return columns.AsReadOnly();
+        }
+
+        private static bool IsLocalTableName(string name) =>
+            !string.IsNullOrEmpty(name) && (name.StartsWith("#", StringComparison.Ordinal) || name.StartsWith("@", StringComparison.Ordinal));
     }
 }

@@ -128,6 +128,30 @@ namespace SsmsAutocompletion {
             catch { return false; }
         }
 
+        public bool IsInsideOverClause(ParseResult parseResult, int line, int column) {
+            try {
+                var tokenManager = parseResult?.Script?.TokenManager;
+                if (tokenManager == null) return false;
+                int cursorToken = tokenManager.FindToken(line, column);
+                int depth = 0;
+                for (int i = cursorToken - 1; i >= 0; i--) {
+                    var tok = tokenManager.GetToken(i);
+                    if (tok == null || !tok.IsSignificant) continue;
+                    string text = tokenManager.GetText(i)?.Trim() ?? "";
+                    if (text == ")") { depth++; continue; }
+                    if (text == "(") {
+                        if (depth > 0) { depth--; continue; }
+                        // Innermost paren enclosing the cursor — is it the OVER(...) paren?
+                        int prevIndex = tokenManager.GetPreviousSignificantTokenIndex(i);
+                        string prevText = prevIndex >= 0 ? tokenManager.GetText(prevIndex)?.Trim() : null;
+                        return string.Equals(prevText, "OVER", StringComparison.OrdinalIgnoreCase);
+                    }
+                }
+                return false;
+            }
+            catch { return false; }
+        }
+
         public string GetCurrentWord(ITextSnapshot snapshot, int caretPosition) {
             if (caretPosition <= 0 || caretPosition > snapshot.Length) return "";
             int start = FindWordStart(snapshot, caretPosition);
@@ -392,6 +416,6 @@ namespace SsmsAutocompletion {
         }
 
         private static bool IsWordCharacter(char character) =>
-            char.IsLetterOrDigit(character) || character == '_' || character == '#';
+            char.IsLetterOrDigit(character) || character == '_' || character == '#' || character == '@';
     }
 }

@@ -54,6 +54,21 @@ namespace SsmsAutocompletion.Tests {
             Assert.AreEqual(0, result.Count);
         }
 
+        // ── DECLARE @t TABLE (...) ───────────────────────────────────────────────
+
+        [TestMethod]
+        public void DeclareTableVariable_ExtractsColumns() {
+            var result = Extract("DECLARE @t TABLE (Id INT, Name VARCHAR(50))");
+            Assert.IsTrue(result.ContainsKey("@t"));
+            CollectionAssert.AreEqual(new[] { "Id", "Name" }, result["@t"].ToList());
+        }
+
+        [TestMethod]
+        public void DeclareTableVariable_CaseInsensitiveLookup() {
+            var result = Extract("DECLARE @T TABLE (Id INT)");
+            Assert.IsTrue(result.ContainsKey("@t"));
+        }
+
         // ── Multiple temp tables in same batch ─────────────────────────────────
 
         [TestMethod]
@@ -62,6 +77,14 @@ namespace SsmsAutocompletion.Tests {
                 "CREATE TABLE #a (X INT); SELECT Y INTO #b FROM Orders;");
             Assert.IsTrue(result.ContainsKey("#a"));
             Assert.IsTrue(result.ContainsKey("#b"));
+        }
+
+        [TestMethod]
+        public void TempTableAndTableVariable_BothExtracted() {
+            var result = Extract(
+                "CREATE TABLE #a (X INT); DECLARE @b TABLE (Y INT);");
+            Assert.IsTrue(result.ContainsKey("#a"));
+            Assert.IsTrue(result.ContainsKey("@b"));
         }
 
         // ── Null/empty safety ──────────────────────────────────────────────────

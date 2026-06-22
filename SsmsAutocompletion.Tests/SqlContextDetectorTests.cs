@@ -57,6 +57,12 @@ namespace SsmsAutocompletion.Tests {
             Assert.IsTrue(Detector.IsDotContext(SnapshotHelper.Make(text), text.Length));
         }
 
+        [TestMethod]
+        public void IsDotContext_TableVariableAt_True() {
+            string text = "@t.";
+            Assert.IsTrue(Detector.IsDotContext(SnapshotHelper.Make(text), text.Length));
+        }
+
         // ══════════════════════════════════════════════════════════════════════
         // GetQualifier
         // ══════════════════════════════════════════════════════════════════════
@@ -92,6 +98,13 @@ namespace SsmsAutocompletion.Tests {
             // "#temp.col" → qualifier is "#temp" (hash must be retained)
             string text = "#temp.col";
             Assert.AreEqual("#temp", Detector.GetQualifier(SnapshotHelper.Make(text), text.Length));
+        }
+
+        [TestMethod]
+        public void GetQualifier_TableVariableAt_IncludesAt() {
+            // "@t.col" → qualifier is "@t" (at-sign must be retained)
+            string text = "@t.col";
+            Assert.AreEqual("@t", Detector.GetQualifier(SnapshotHelper.Make(text), text.Length));
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -322,6 +335,54 @@ namespace SsmsAutocompletion.Tests {
         [TestMethod]
         public void IsInsideOrderByClause_NullParseResult_False() =>
             Assert.IsFalse(Detector.IsInsideOrderByClause(null, 1, 1));
+
+        // ══════════════════════════════════════════════════════════════════════
+        // IsInsideOverClause  (uses real TokenManager)
+        // ══════════════════════════════════════════════════════════════════════
+
+        [TestMethod]
+        public void IsInsideOverClause_AfterPartitionBy_True() {
+            string sql = "SELECT ROW_NUMBER() OVER (PARTITION BY ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsTrue(Detector.IsInsideOverClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideOverClause_AfterOrderByInsideOver_True() {
+            string sql = "SELECT ROW_NUMBER() OVER (PARTITION BY CustomerId ORDER BY ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsTrue(Detector.IsInsideOverClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideOverClause_AfterClosedOver_False() {
+            string sql = "SELECT ROW_NUMBER() OVER (PARTITION BY CustomerId) AS rn FROM Orders WHERE ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsFalse(Detector.IsInsideOverClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideOverClause_InsideUnrelatedFunctionParens_False() {
+            string sql = "SELECT SUM(";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsFalse(Detector.IsInsideOverClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideOverClause_BeforeAnyOver_False() {
+            string sql = "SELECT a FROM Orders ";
+            var result = Parse(sql);
+            var (line, col) = Pos(sql, sql.Length);
+            Assert.IsFalse(Detector.IsInsideOverClause(result, line, col));
+        }
+
+        [TestMethod]
+        public void IsInsideOverClause_NullParseResult_False() =>
+            Assert.IsFalse(Detector.IsInsideOverClause(null, 1, 1));
 
         // ══════════════════════════════════════════════════════════════════════
         // DetectAliasContext  (uses real TokenManager)

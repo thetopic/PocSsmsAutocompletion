@@ -48,6 +48,7 @@ namespace SsmsAutocompletion {
             bool isGroupByContext = _contextDetector.IsInsideGroupByClause(parseResult, line, column);
             bool isHavingContext  = _contextDetector.IsInsideHavingClause(parseResult, line, column);
             bool isOrderByContext = _contextDetector.IsInsideOrderByClause(parseResult, line, column);
+            bool isWindowContext  = _contextDetector.IsInsideOverClause(parseResult, line, column);
 
             return new CompletionRequest(
                 sql, caretPosition, line, column,
@@ -60,7 +61,7 @@ namespace SsmsAutocompletion {
                 isInsertCols, isUpdateSet,
                 isInsertCols ? insertTable : (isUpdateSet ? updateTable : null),
                 isInSelectList, isGroupByContext, isHavingContext, isOrderByContext,
-                isAfterWithKeyword);
+                isAfterWithKeyword, isWindowContext);
         }
     }
 }
